@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MQ Pedidos</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>📚 MQ Pedidos</h1>
+
+        <div class="card">
+
+            <label>Nome</label>
+
+            <input type="text" id="nome" placeholder="Informe seu nome">
+
+            <label>Livros disponíveis</label>
+
+            <div class="linha">
+
+                <select id="livros">
+                    <option value="Arquiteturas Elásticas na Nuvem">Arquiteturas Elásticas na Nuvem</option>
+                    <option value="Docker sem Mistérios">Docker sem Mistérios</option>
+                    <option value="Terraform para Humanos">Terraform para Humanos</option>
+                    <option value="Kubernetes Além do Básico">Kubernetes Além do Básico</option>
+                    <option value="Serverless do Zero ao Infinito">Serverless do Zero ao Infinito</option>
+                    <option value="A Arte do MultiCloud">A Arte do MultiCloud</option>
+                    <option value="Cloud Native Descomplicado">Cloud Native Descomplicado</option>
+                    <option value="DevOps nas Estrelas">DevOps nas Estrelas</option>
+                    <option value="Observabilidade em Ambientes Distribuídos">Observabilidade em Ambientes Distribuídos
+                    </option>
+                    <option value="Segurança nas Nuvens Modernas">Segurança nas Nuvens Modernas</option>
+                </select>
+
+                <button id="adicionar">
+                    Adicionar →
+                </button>
+
+            </div>
+
+            <label>Livros do pedido</label>
+
+            <select id="selecionados" size="8">
+
+            </select>
+
+            <button id="confirmar" class="confirmar">
+                Confirmar Pedido
+            </button>
+
+            <div id="resultado"></div>
+
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>

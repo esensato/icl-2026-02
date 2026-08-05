@@ -1,0 +1,203 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Segoe UI, Arial, sans-serif;
+}
+
+body {
+
+    background: #eef2f7;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+
+}
+
+.container {
+
+    width: 700px;
+
+}
+
+.card {
+
+    background: white;
+
+    padding: 35px;
+
+    border-radius: 14px;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .12);
+
+}
+
+h1 {
+
+    text-align: center;
+
+    margin-bottom: 25px;
+
+    color: #34495e;
+
+}
+
+label {
+
+    display: block;
+
+    margin-top: 18px;
+
+    margin-bottom: 8px;
+
+    color: #555;
+
+    font-weight: 600;
+
+}
+
+input {
+
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #ccc;
+
+    border-radius: 8px;
+
+    font-size: 16px;
+
+}
+
+.linha {
+
+    display: flex;
+
+    gap: 12px;
+
+}
+
+select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+#selecionados {
+    width: 100%;
+    height: 180px;
+    /* altura fixa */
+    overflow-y: auto;
+    margin-top: 5px;
+}
+
+button {
+
+    background: #3498db;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    padding: 12px 18px;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+button:hover {
+
+    background: #2980b9;
+
+}
+
+.confirmar {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    background: #2ecc71;
+
+    font-size: 17px;
+
+}
+
+.confirmar:hover {
+
+    background: #27ae60;
+
+}
+
+#resultado {
+
+    margin-top: 20px;
+
+    text-align: center;
+
+    color: #27ae60;
+
+    font-weight: bold;
+
+}
+
+#mensagemFila {
+
+    color: #d63031;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 24px;
+
+}
+
+#cardsPedidos {
+
+    margin-top: 25px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+
+}
+
+.pedido-card {
+
+    border-left: 6px solid #3498db;
+
+    background: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 18px;
+
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .08);
+
+}
+
+.pedido-card h3 {
+
+    color: #2c3e50;
+
+    margin-bottom: 12px;
+
+}
+
+.pedido-card ul {
+
+    margin-left: 20px;
+
+}
+
+.pedido-card li {
+
+    margin: 6px 0;
+
+}

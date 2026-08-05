@@ -1,2 +1,1 @@
-# icl-2026-02
-Infraestrutura Cloud
+# icl-2026-02 - Infraestrutura Cloud
