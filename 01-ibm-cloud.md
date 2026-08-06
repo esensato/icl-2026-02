@@ -16,7 +16,15 @@
 - Acessar a url `https://cloud.ibm.com/`
 - Obter uma chave de API `https://cloud.ibm.com/iam/apikeys`
 
-# MQ
+## Text to Speech
+- Utilizar como base o projeto `aula/voz`
+- Criar um arquivo `.env`
+```javascript
+IBM_API_KEY=
+IBM_URL=
+PORT=3000
+```
+## MQ
 - Instanciar o serviço de fila **IBM MQ**
 - Criar um gerenciador de filas e abrir o console de gerenciamento
 - Utilizar como base o projeto `aula/mq-pedidos`
