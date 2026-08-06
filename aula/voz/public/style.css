@@ -1,0 +1,112 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+
+    height: 100vh;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background: #f4f6f8;
+
+}
+
+.container {
+
+    width: 700px;
+
+    background: white;
+
+    padding: 40px;
+
+    border-radius: 15px;
+
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, .08);
+
+}
+
+h1 {
+
+    text-align: center;
+
+    margin-bottom: 25px;
+
+    color: #333;
+
+}
+
+textarea {
+
+    width: 100%;
+
+    height: 220px;
+
+    resize: none;
+
+    padding: 15px;
+
+    border-radius: 8px;
+
+    border: 1px solid #DDD;
+
+    font-size: 16px;
+
+    outline: none;
+
+}
+
+textarea:focus {
+
+    border-color: #4c8bf5;
+
+}
+
+button {
+
+    margin-top: 20px;
+
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #3478F6;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    transition: .3s;
+
+}
+
+button:hover {
+
+    background: #255ec5;
+
+}
+
+.player {
+
+    margin-top: 30px;
+
+}
+
+audio {
+
+    width: 100%;
+
+}
