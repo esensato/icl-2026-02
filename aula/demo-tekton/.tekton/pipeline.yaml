@@ -46,3 +46,14 @@ spec:
 
         - name: mensagem
           value: $(params.mensagem)
+
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: demo-pipeline-tekton-run
+spec:
+  pipelineRef:
+    name: demo-pipeline-tekton
+  params:
+  - name: mensagem
+    value: "Tekton"
