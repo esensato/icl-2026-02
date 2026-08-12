@@ -8,13 +8,12 @@ kind: Task
 metadata:
   name: tarefa-1
 
+spec:
   params:
-
     - name: mensagem
       type: string
       description: Mensagem que será exibida
 
-spec:
   steps:
     - name: exibir-mensagem
       image: alpine:latest
@@ -36,12 +35,13 @@ kind: Pipeline
 metadata:
   name: demo-pipeline-tekton
 
+spec:
+
   params:
     - name: mensagem
       type: string
       description: Mensagem que será enviada para a Task
 
-spec:
   tasks:
     - name: pipeline-tarefa-1
       taskRef:
