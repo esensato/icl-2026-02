@@ -24,7 +24,6 @@ spec:
         echo "$(params.mensagem)"
         echo "======================================"
 
-
 ---
 # ============================================================
 # PIPELINE
@@ -52,27 +51,6 @@ spec:
         - name: mensagem
           value: "$(params.mensagem)"
 
-
----
-# ============================================================
-# PIPELINE RUN
-# ============================================================
-
-apiVersion: tekton.dev/v1
-kind: PipelineRun
-
-metadata:
-  generateName: demo-pipeline-tekton-run-
-
-spec:
-  pipelineRef:
-    name: demo-pipeline-tekton
-
-  params:
-    - name: mensagem
-      value: "$(params.mensagem)"
-
-
 ---
 # ============================================================
 # TRIGGER BINDING
@@ -86,9 +64,8 @@ metadata:
 
 spec:
   params:
-      - name: mensagem
-        value: $(body.mensagem)
-
+    - name: mensagem
+      value: $(body.mensagem)
 
 ---
 # ============================================================
@@ -102,6 +79,10 @@ metadata:
   name: teste-pipeline-template
 
 spec:
+  params:
+    - name: mensagem
+      description: Mensagem recebida pelo TriggerBinding
+
   resourcetemplates:
 
     - apiVersion: tekton.dev/v1
@@ -117,7 +98,6 @@ spec:
         params:
           - name: mensagem
             value: "$(tt.params.mensagem)"
-
 
 ---
 # ============================================================
