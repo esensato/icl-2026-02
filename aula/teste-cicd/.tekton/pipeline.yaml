@@ -1,5 +1,5 @@
 # ============================================================
-# TASK: CLONE DO REPOSITÓRIO
+# TASK 1 - CLONE DO REPOSITÓRIO
 # ============================================================
 
 apiVersion: tekton.dev/v1
@@ -24,7 +24,7 @@ spec:
   workspaces:
 
     - name: output
-      description: Workspace onde o repositório será clonado
+      description: Workspace onde o código será clonado
 
   steps:
 
@@ -33,21 +33,299 @@ spec:
       image: alpine/git:latest
 
       script: |
+        #!/bin/sh
 
-        # Remove conteúdo anterior do workspace
-        rm -rf "$(workspaces.output.path)"/*
+        set -eu
 
-        echo "Clonando:"
+        echo "======================================"
+        echo "Clonando repositório"
+        echo "======================================"
+
+        echo "URL:"
         echo "$(params.url)"
 
         echo "Revision:"
         echo "$(params.revision)"
 
+        # ------------------------------------------------------
+        # Normaliza refs/heads/main para main
+        # ------------------------------------------------------
+
+        REVISION="$(params.revision)"
+
+        case "$REVISION" in
+          refs/heads/*)
+            REVISION="${REVISION#refs/heads/}"
+            ;;
+        esac
+
+        echo "Revision utilizada:"
+        echo "$REVISION"
+
+        # ------------------------------------------------------
+        # Limpa workspace
+        # ------------------------------------------------------
+
+        rm -rf "$(workspaces.output.path)"/*
+
+        # ------------------------------------------------------
+        # Clone
+        # ------------------------------------------------------
+
         git clone \
           --depth 1 \
-          --branch "$(params.revision)" \
+          --branch "$REVISION" \
           "$(params.url)" \
           "$(workspaces.output.path)"
+
+        echo ""
+        echo "======================================"
+        echo "Repositório clonado"
+        echo "======================================"
+
+        ls -la "$(workspaces.output.path)"
+
+        echo ""
+        echo "Aplicação:"
+        ls -la "$(workspaces.output.path)/aula/teste-cicd"
+
+
+---
+# ============================================================
+# TASK 2 - BUILD E PUSH PARA IBM CONTAINER REGISTRY
+# ============================================================
+
+apiVersion: tekton.dev/v1
+kind: Task
+
+metadata:
+  name: build-and-push
+
+spec:
+
+  params:
+
+    - name: image
+      type: string
+      description: Imagem completa que será criada
+
+      default: icr.io/esensato-repo/teste-cicd:latest
+
+    - name: context
+      type: string
+      description: Caminho relativo ao contexto Docker
+
+      default: aula/teste-cicd
+
+    - name: dockerfile
+      type: string
+      description: Caminho relativo ao Dockerfile
+
+      default: aula/teste-cicd/Dockerfile
+
+    - name: api-key-secret
+      type: string
+      description: Secret contendo a API Key do IBM Cloud
+
+      default: secure-properties
+
+    - name: api-key-secret-key
+      type: string
+      description: Chave dentro do Secret que contém a API Key
+
+      default: apikey
+
+  workspaces:
+
+    - name: source
+      description: Código fonte da aplicação
+
+
+  steps:
+
+    # ========================================================
+    # CONFIGURA CREDENCIAL DO IBM CONTAINER REGISTRY
+    # ========================================================
+
+    - name: configure-registry
+
+      image: moby/buildkit:v0.12.5
+
+      env:
+
+        - name: IBM_CLOUD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: $(params.api-key-secret)
+              key: $(params.api-key-secret-key)
+
+        - name: IMAGE
+          value: $(params.image)
+
+      script: |
+
+        #!/bin/sh
+
+        set -eu
+
+        echo "======================================"
+        echo "Configurando IBM Container Registry"
+        echo "======================================"
+
+        # ----------------------------------------------------
+        # Extrai registry da imagem
+        #
+        # icr.io/esensato-repo/teste-cicd:latest
+        #
+        # registry = icr.io
+        # ----------------------------------------------------
+
+        REGISTRY="$(echo "$IMAGE" | cut -d/ -f1)"
+
+        echo "Registry:"
+        echo "$REGISTRY"
+
+        # ----------------------------------------------------
+        # Cria Docker config
+        #
+        # IBM Container Registry aceita:
+        #
+        # username = iamapikey
+        # password = API Key
+        # ----------------------------------------------------
+
+        mkdir -p /workspace/docker-config
+
+        AUTH="$(printf '%s' "iamapikey:${IBM_CLOUD_API_KEY}" | base64 | tr -d '\n')"
+
+        cat > /workspace/docker-config/config.json <<EOF
+        {
+          "auths": {
+            "${REGISTRY}": {
+              "auth": "${AUTH}"
+            }
+          }
+        }
+        EOF
+
+        echo ""
+        echo "Docker config criado."
+
+
+    # ========================================================
+    # BUILD + PUSH
+    # ========================================================
+
+    - name: build-and-push
+
+      image: moby/buildkit:v0.12.5
+
+      env:
+
+        - name: DOCKER_CONFIG
+          value: /workspace/docker-config
+
+        - name: IMAGE
+          value: $(params.image)
+
+        - name: CONTEXT
+          value: $(params.context)
+
+        - name: DOCKERFILE
+          value: $(params.dockerfile)
+
+      workingDir: $(workspaces.source.path)
+
+      script: |
+
+        #!/bin/sh
+
+        set -eu
+
+        echo "======================================"
+        echo "Build da imagem"
+        echo "======================================"
+
+        echo "Imagem:"
+        echo "$IMAGE"
+
+        echo "Context:"
+        echo "$CONTEXT"
+
+        echo "Dockerfile:"
+        echo "$DOCKERFILE"
+
+        echo ""
+
+        # ----------------------------------------------------
+        # Verificações
+        # ----------------------------------------------------
+
+        if [ ! -f "$DOCKERFILE" ]; then
+          echo "ERRO: Dockerfile não encontrado:"
+          echo "$DOCKERFILE"
+          exit 1
+        fi
+
+        if [ ! -d "$CONTEXT" ]; then
+          echo "ERRO: contexto Docker não encontrado:"
+          echo "$CONTEXT"
+          exit 1
+        fi
+
+        echo "Dockerfile encontrado:"
+        ls -l "$DOCKERFILE"
+
+        echo ""
+
+        echo "Conteúdo do contexto:"
+        ls -la "$CONTEXT"
+
+        # ----------------------------------------------------
+        # BuildKit
+        # ----------------------------------------------------
+
+        echo ""
+        echo "======================================"
+        echo "Executando BuildKit"
+        echo "======================================"
+
+        buildctl \
+          --addr tcp://buildkitd:1234 \
+          build \
+          --frontend dockerfile.v0 \
+          --local context="$CONTEXT" \
+          --local dockerfile="$(dirname "$DOCKERFILE")" \
+          --opt filename="$(basename "$DOCKERFILE")" \
+          --output "type=image,name=${IMAGE},push=true"
+
+        echo ""
+        echo "======================================"
+        echo "Imagem publicada"
+        echo "======================================"
+
+        echo "$IMAGE"
+
+
+  # ==========================================================
+  # BUILDKIT DAEMON
+  # ==========================================================
+
+  sidecars:
+
+    - name: buildkitd
+
+      image: moby/buildkit:v0.12.5
+
+      securityContext:
+        privileged: true
+
+      command:
+        - buildkitd
+
+      args:
+        - --addr
+        - tcp://0.0.0.0:1234
 
 
 ---
@@ -65,40 +343,53 @@ spec:
 
   params:
 
+    # --------------------------------------------------------
+    # Git
+    # --------------------------------------------------------
+
     - name: git-url
       type: string
       description: URL do repositório Git
-      default: "https://github.com/esensato/icl-2026-02.git"
+
+      default: https://github.com/esensato/icl-2026-02.git
+
 
     - name: git-revision
       type: string
-      description: Branch do Git
+      description: Branch ou commit
+
       default: main
 
-    - name: image-name
-      type: string
-      description: Nome da imagem
-      default: teste-cicd
 
-    - name: registry-namespace
-      type: string
-      description: Namespace do IBM Container Registry
-      default: SEU_NAMESPACE
+    # --------------------------------------------------------
+    # Container Registry
+    # --------------------------------------------------------
 
-    - name: registry-region
+    - name: image
       type: string
-      description: Região do IBM Container Registry
-      default: us-south
+      description: Imagem que será publicada
+
+      default: icr.io/esensato-repo/teste-cicd:latest
+
+
+  # ----------------------------------------------------------
+  # Workspace
+  # ----------------------------------------------------------
 
   workspaces:
 
     - name: source
 
+
+  # ----------------------------------------------------------
+  # Tasks
+  # ----------------------------------------------------------
+
   tasks:
 
-    # --------------------------------------------------------
+    # ========================================================
     # CLONE
-    # --------------------------------------------------------
+    # ========================================================
 
     - name: clone
 
@@ -119,9 +410,9 @@ spec:
           workspace: source
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # BUILD + PUSH
-    # --------------------------------------------------------
+    # ========================================================
 
     - name: build-image
 
@@ -129,27 +420,18 @@ spec:
         - clone
 
       taskRef:
-        name: icr-containerize
+        name: build-and-push
 
       params:
 
-        - name: registry-region
-          value: $(params.registry-region)
+        - name: image
+          value: $(params.image)
 
-        - name: registry-namespace
-          value: $(params.registry-namespace)
-
-        - name: image-name
-          value: $(params.image-name)
-
-        - name: path-to-context
-          value: "aula/teste-cicd"
-
-        - name: path-to-dockerfile
-          value: "aula/teste-cicd"
+        - name: context
+          value: aula/teste-cicd
 
         - name: dockerfile
-          value: "Dockerfile"
+          value: aula/teste-cicd/Dockerfile
 
       workspaces:
 
@@ -178,14 +460,8 @@ spec:
     - name: git-revision
       value: $(body.ref)
 
-    - name: image-name
-      value: teste-cicd
-
-    - name: registry-namespace
-      value: SEU_NAMESPACE
-
-    - name: registry-region
-      value: us-south
+    - name: image
+      value: icr.io/esensato-repo/teste-cicd:latest
 
 
 ---
@@ -207,11 +483,8 @@ spec:
 
     - name: git-revision
 
-    - name: image-name
+    - name: image
 
-    - name: registry-namespace
-
-    - name: registry-region
 
   resourcetemplates:
 
@@ -235,18 +508,13 @@ spec:
           - name: git-revision
             value: $(tt.params.git-revision)
 
-          - name: image-name
-            value: $(tt.params.image-name)
-
-          - name: registry-namespace
-            value: $(tt.params.registry-namespace)
-
-          - name: registry-region
-            value: $(tt.params.registry-region)
+          - name: image
+            value: $(tt.params.image)
 
         workspaces:
 
           - name: source
+
             emptyDir: {}
 
 
