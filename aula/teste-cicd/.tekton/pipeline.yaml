@@ -1,0 +1,62 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+
+metadata:
+  name: teste-pipeline
+
+spec:
+  params:
+    - name: repo-url
+      type: string
+
+    - name: revision
+      type: string
+      default: main
+
+    - name: image
+      type: string
+      description: Nome completo da imagem a ser publicada
+
+  workspaces:
+    - name: source
+
+  tasks:
+
+    - name: clone
+      taskRef:
+        name: git-clone
+
+      params:
+        - name: url
+          value: $(params.repo-url)
+
+        - name: revision
+          value: $(params.revision)
+
+        - name: deleteExisting
+          value: "true"
+
+      workspaces:
+        - name: output
+          workspace: source
+
+    - name: build-and-push
+      runAfter:
+        - clone
+
+      taskRef:
+        name: kaniko
+
+      params:
+        - name: IMAGE
+          value: $(params.image)
+
+        - name: DOCKERFILE
+          value: ./Dockerfile
+
+        - name: CONTEXT
+          value: $(workspaces.source.path)
+
+      workspaces:
+        - name: source
+          workspace: source
