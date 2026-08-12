@@ -1,24 +1,29 @@
+# ============================================================
+# TASK
+# ============================================================
+
 apiVersion: tekton.dev/v1
 kind: Task
 
 metadata:
   name: tarefa-1
+
 spec:
-  params:
-    - name: mensagem
-      type: string
-      description: Mensagem
-      default: "Boa Noite"
   steps:
     - name: exibir-mensagem
+      image: alpine:latest
       script: |
         #!/bin/sh
 
         echo "======================================"
-        echo "$(params.mensagem)" 
+        echo "BOA NOITE!!!"
         echo "======================================"
 
+
 ---
+# ============================================================
+# PIPELINE
+# ============================================================
 
 apiVersion: tekton.dev/v1
 kind: Pipeline
@@ -27,35 +32,86 @@ metadata:
   name: demo-pipeline-tekton
 
 spec:
-
-  params:
-
-    - name: mensagem
-      type: string
-      description: Mensagem
-      default: "Boa Noite!"
-
   tasks:
-
-    - name: Pipeline-tarefa-1
-
+    - name: pipeline-tarefa-1
       taskRef:
         name: tarefa-1
 
-      params:
-
-        - name: mensagem
-          value: $(params.mensagem)
 
 ---
+# ============================================================
+# PIPELINE RUN
+# ============================================================
 
 apiVersion: tekton.dev/v1
 kind: PipelineRun
+
 metadata:
-  name: demo-pipeline-tekton-run
+  generateName: demo-pipeline-tekton-run-
+
 spec:
   pipelineRef:
     name: demo-pipeline-tekton
-  params:
-  - name: mensagem
-    value: "Tekton"
+
+
+---
+# ============================================================
+# TRIGGER BINDING
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+
+metadata:
+  name: teste-pipeline-binding
+
+spec:
+  params: []
+
+
+---
+# ============================================================
+# TRIGGER TEMPLATE
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+
+metadata:
+  name: teste-pipeline-template
+
+spec:
+  resourcetemplates:
+
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+
+      metadata:
+        generateName: demo-pipeline-tekton-run-
+
+      spec:
+        pipelineRef:
+          name: demo-pipeline-tekton
+
+
+---
+# ============================================================
+# EVENT LISTENER
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+
+metadata:
+  name: teste-pipeline-listener
+
+spec:
+  triggers:
+
+    - name: teste-pipeline-trigger
+
+      bindings:
+        - ref: teste-pipeline-binding
+
+      template:
+        ref: teste-pipeline-template
