@@ -15,6 +15,7 @@ spec:
     - name: url
       type: string
       description: URL do repositório Git
+      default: https://github.com/esensato/icl-2026-02.git
 
     - name: revision
       type: string
@@ -42,7 +43,7 @@ spec:
         echo "======================================"
 
         echo "URL:"
-        echo "$(params.git-url)"
+        echo "$(params.url)"
 
         echo "Revision:"
         echo "$(params.revision)"
