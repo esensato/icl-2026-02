@@ -60,3 +60,88 @@ spec:
       workspaces:
         - name: source
           workspace: source
+kind: PipelineRun
+
+metadata:
+  name: teste-pipeline-run
+
+  annotations:
+    pipelinesascode.tekton.dev/on-event: "[push]"
+    pipelinesascode.tekton.dev/on-target-branch: "[main]"
+
+spec:
+  pipelineRef:
+    name: teste-pipeline
+
+  params:
+    - name: repo-url
+      value: "{{repo_url}}"
+
+    - name: revision
+      value: "{{revision}}"
+
+    - name: image
+      value: "ghcr.io/minha-organizacao/teste:latest"
+
+  workspaces:
+    - name: source
+      emptyDir: {}
+
+kind: TriggerBinding
+
+metadata:
+  name: teste-cicd-binding
+
+spec:
+
+  params:
+
+    - name: git-url
+      value: $(body.repository.clone_url)
+
+    - name: git-revision
+      value: $(body.ref)
+
+kind: TriggerTemplate
+
+metadata:
+  name: teste-cicd-template
+
+spec:
+
+  params:
+
+    - name: git-url
+
+    - name: git-revision
+
+    - name: image
+
+  resourcetemplates:
+
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+
+      metadata:
+        generateName: teste-cicd-
+
+      spec:
+
+        pipelineRef:
+          name: teste-cicd
+
+        params:
+
+          - name: git-url
+            value: $(tt.params.git-url)
+
+          - name: git-revision
+            value: $(tt.params.git-revision)
+
+          - name: image
+            value: $(tt.params.image)
+
+        workspaces:
+
+          - name: source
+            emptyDir: {}
