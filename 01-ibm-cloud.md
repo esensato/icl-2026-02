@@ -510,6 +510,9 @@ main();
 - A atualização e exclusão de documentos exigem informar o campo **_rev**, que representa a revisão atual do documento.
 - Os documentos são armazenados em formato **JSON**, característica típica dos bancos NoSQL orientados a documentos como o Cloudant e o CouchDB.
 
+### Deploy de Aplicações
+- Criar uma instância de **Continuous Delivery**
+- Criar uma **Toolchain (Cadeia de Ferramentas)** do tipo **Desenvolva um aplicativo Code Engine**
 ### Watson Assistant
 - Permite a criação de **chatbots**
 - Efetuar login na [IBM Cloud](https://cloud.ibm.com)

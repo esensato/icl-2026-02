@@ -36,7 +36,7 @@ app.post("/voz", async (req, res) => {
         const params = {
             text: texto,
             accept: "audio/mp3",
-            voice: "pt-BR_IsabelaV3Voice"
+            voice: "fr-CA_LouiseV3Voice"
         };
 
         const response = await textToSpeech.synthesize(params);
