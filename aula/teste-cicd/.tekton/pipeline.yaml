@@ -42,7 +42,7 @@ spec:
         echo "======================================"
 
         echo "URL:"
-        echo "$(params.url)"
+        echo "$(params.git-url)"
 
         echo "Revision:"
         echo "$(params.revision)"
@@ -108,31 +108,26 @@ spec:
     - name: image
       type: string
       description: Imagem completa que será criada
-
       default: icr.io/esensato-repo/teste-cicd:latest
 
     - name: context
       type: string
       description: Caminho relativo ao contexto Docker
-
       default: aula/teste-cicd
 
     - name: dockerfile
       type: string
       description: Caminho relativo ao Dockerfile
-
       default: aula/teste-cicd/Dockerfile
 
     - name: api-key-secret
       type: string
       description: Secret contendo a API Key do IBM Cloud
-
       default: secure-properties
 
     - name: api-key-secret-key
       type: string
       description: Chave dentro do Secret que contém a API Key
-
       default: apikey
 
   workspaces:
@@ -350,7 +345,6 @@ spec:
     - name: git-url
       type: string
       description: URL do repositório Git
-
       default: https://github.com/esensato/icl-2026-02.git
 
 
