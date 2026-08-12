@@ -512,7 +512,9 @@ main();
 
 ### Deploy de Aplicações
 - Criar uma instância de **Continuous Delivery**
-- Criar uma **Toolchain (Cadeia de Ferramentas)** do tipo **Desenvolva um aplicativo Code Engine**
+- Criar uma **Toolchain (Cadeia de Ferramentas)**
+- Hierarquia **Tekton**
+    - EventListener -> TriggerBinding -> TriggerTemplate -> PipelineRun -> Pipeline -> Task
 ### Watson Assistant
 - Permite a criação de **chatbots**
 - Efetuar login na [IBM Cloud](https://cloud.ibm.com)

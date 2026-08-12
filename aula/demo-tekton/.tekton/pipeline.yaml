@@ -8,6 +8,12 @@ kind: Task
 metadata:
   name: tarefa-1
 
+  params:
+
+    - name: mensagem
+      type: string
+      description: Mensagem que será exibida
+
 spec:
   steps:
     - name: exibir-mensagem
@@ -16,9 +22,8 @@ spec:
         #!/bin/sh
 
         echo "======================================"
-        echo "BOA NOITE!!!"
+        echo "$(params.mensagem)"
         echo "======================================"
-
 
 ---
 # ============================================================
@@ -31,13 +36,21 @@ kind: Pipeline
 metadata:
   name: demo-pipeline-tekton
 
+  params:
+    - name: mensagem
+      type: string
+      description: Mensagem que será enviada para a Task
+
 spec:
   tasks:
     - name: pipeline-tarefa-1
       taskRef:
         name: tarefa-1
 
+      params:
 
+        - name: mensagem
+          value: "$(params.mensagem)"
 ---
 # ============================================================
 # PIPELINE RUN
@@ -52,7 +65,10 @@ metadata:
 spec:
   pipelineRef:
     name: demo-pipeline-tekton
+  params:
 
+    - name: mensagem
+      value: "NOVA MENSAGEM!!!"
 
 ---
 # ============================================================
