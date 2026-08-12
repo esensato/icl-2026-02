@@ -1,3 +1,7 @@
+# ============================================================
+# 1. PIPELINE
+# ============================================================
+
 apiVersion: tekton.dev/v1
 kind: Pipeline
 
@@ -5,33 +9,30 @@ metadata:
   name: teste-pipeline
 
 spec:
-
   params:
 
     - name: git-url
       type: string
       description: URL do repositório Git
-      default: "https://github.com/esensato/icl-2026-02.git"
 
     - name: git-revision
       type: string
-      description: Branch ou revisão
-      default: "main"
+      description: Branch ou revisão do Git
+      default: main
 
     - name: image-name
       type: string
-      description: Nome da imagem no IBM Container Registry
-      default: "teste-cicd"
+      description: Nome da imagem que será criada
+      default: teste-cicd
 
     - name: registry-namespace
       type: string
       description: Namespace do IBM Container Registry
-      default: "SEU_NAMESPACE"
 
     - name: registry-region
       type: string
       description: Região do IBM Container Registry
-      default: "us-south"
+      default: us-south
 
   workspaces:
 
@@ -39,9 +40,9 @@ spec:
 
   tasks:
 
-    # ============================================================
-    # 1. CLONA O REPOSITÓRIO
-    # ============================================================
+    # --------------------------------------------------------
+    # CLONE DO REPOSITÓRIO
+    # --------------------------------------------------------
 
     - name: clone
 
@@ -62,9 +63,9 @@ spec:
           workspace: source
 
 
-    # ============================================================
-    # 2. BUILD + PUSH DA IMAGEM
-    # ============================================================
+    # --------------------------------------------------------
+    # BUILD + PUSH DA IMAGEM
+    # --------------------------------------------------------
 
     - name: build-image
 
@@ -86,10 +87,10 @@ spec:
           value: $(params.image-name)
 
         - name: path-to-context
-          value: "."
+          value: "aula/teste-cicd"
 
         - name: path-to-dockerfile
-          value: "."
+          value: "aula/teste-cicd"
 
         - name: dockerfile
           value: "Dockerfile"
@@ -98,3 +99,120 @@ spec:
 
         - name: source
           workspace: source
+
+
+---
+# ============================================================
+# 2. TRIGGER BINDING
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+
+metadata:
+  name: teste-pipeline-binding
+
+spec:
+  params:
+
+    - name: git-url
+      value: $(body.repository.clone_url)
+
+    - name: git-revision
+      value: $(body.ref)
+
+    - name: image-name
+      value: teste-cicd
+
+    - name: registry-namespace
+      value: SEU_NAMESPACE
+
+    - name: registry-region
+      value: us-south
+
+
+---
+# ============================================================
+# 3. TRIGGER TEMPLATE
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+
+metadata:
+  name: teste-pipeline-template
+
+spec:
+
+  params:
+
+    - name: git-url
+
+    - name: git-revision
+
+    - name: image-name
+
+    - name: registry-namespace
+
+    - name: registry-region
+
+  resourcetemplates:
+
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+
+      metadata:
+        generateName: teste-pipeline-
+
+      spec:
+
+        pipelineRef:
+          name: teste-pipeline
+
+        params:
+
+          - name: git-url
+            value: $(tt.params.git-url)
+
+          - name: git-revision
+            value: $(tt.params.git-revision)
+
+          - name: image-name
+            value: $(tt.params.image-name)
+
+          - name: registry-namespace
+            value: $(tt.params.registry-namespace)
+
+          - name: registry-region
+            value: $(tt.params.registry-region)
+
+        workspaces:
+
+          - name: source
+            emptyDir: {}
+
+
+---
+# ============================================================
+# 4. EVENT LISTENER
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+
+metadata:
+  name: teste-pipeline-listener
+
+spec:
+
+  triggers:
+
+    - name: teste-pipeline-trigger
+
+      bindings:
+
+        - ref: teste-pipeline-binding
+
+      template:
+
+        ref: teste-pipeline-template
