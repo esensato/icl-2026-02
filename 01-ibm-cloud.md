@@ -514,7 +514,7 @@ main();
 - Criar uma instância de **Continuous Delivery**
 - Criar uma **Toolchain (Cadeia de Ferramentas)**
 - Hierarquia **Tekton**
-    - EventListener -> TriggerBinding -> TriggerTemplate -> PipelineRun -> Pipeline -> Task
+    - EventListener -> TriggerBinding -> TriggerTemplate -> Pipeline -> Task
 ### Watson Assistant
 - Permite a criação de **chatbots**
 - Efetuar login na [IBM Cloud](https://cloud.ibm.com)

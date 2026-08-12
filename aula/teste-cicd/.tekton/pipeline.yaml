@@ -136,6 +136,10 @@ spec:
     - name: source
       description: Código fonte da aplicação
 
+  volumes:
+
+    - name: kaniko-docker-config
+      emptyDir: {}
 
   steps:
 
@@ -145,7 +149,7 @@ spec:
 
     - name: configure-registry
 
-      image: moby/buildkit:v0.12.5
+      image: alpine:3.20
 
       env:
 
@@ -158,6 +162,11 @@ spec:
         - name: IMAGE
           value: $(params.image)
 
+      volumeMounts:
+
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+
       script: |
 
         #!/bin/sh
@@ -168,33 +177,20 @@ spec:
         echo "Configurando IBM Container Registry"
         echo "======================================"
 
-        # ----------------------------------------------------
-        # Extrai registry da imagem
-        #
-        # icr.io/esensato-repo/teste-cicd:latest
-        #
-        # registry = icr.io
-        # ----------------------------------------------------
-
         REGISTRY="$(echo "$IMAGE" | cut -d/ -f1)"
 
         echo "Registry:"
         echo "$REGISTRY"
 
-        # ----------------------------------------------------
-        # Cria Docker config
-        #
-        # IBM Container Registry aceita:
-        #
+        # IBM Container Registry:
         # username = iamapikey
-        # password = API Key
-        # ----------------------------------------------------
-
-        mkdir -p /workspace/docker-config
+        # password = IBM Cloud API Key
 
         AUTH="$(printf '%s' "iamapikey:${IBM_CLOUD_API_KEY}" | base64 | tr -d '\n')"
 
-        cat > /workspace/docker-config/config.json <<EOF
+        mkdir -p /kaniko/.docker
+
+        cat > /kaniko/.docker/config.json <<EOF
         {
           "auths": {
             "${REGISTRY}": {
@@ -205,124 +201,28 @@ spec:
         EOF
 
         echo ""
-        echo "Docker config criado."
-
+        echo "Docker config criado para o Kaniko."
 
     # ========================================================
-    # BUILD + PUSH
+    # BUILD + PUSH COM KANIKO
     # ========================================================
 
     - name: build-and-push
 
-      image: moby/buildkit:v0.12.5
+      image: gcr.io/kaniko-project/executor:v1.23.2
 
-      env:
+      volumeMounts:
 
-        - name: DOCKER_CONFIG
-          value: /workspace/docker-config
-
-        - name: IMAGE
-          value: $(params.image)
-
-        - name: CONTEXT
-          value: $(params.context)
-
-        - name: DOCKERFILE
-          value: $(params.dockerfile)
-
-      workingDir: $(workspaces.source.path)
-
-      script: |
-
-        #!/bin/sh
-
-        set -eu
-
-        echo "======================================"
-        echo "Build da imagem"
-        echo "======================================"
-
-        echo "Imagem:"
-        echo "$IMAGE"
-
-        echo "Context:"
-        echo "$CONTEXT"
-
-        echo "Dockerfile:"
-        echo "$DOCKERFILE"
-
-        echo ""
-
-        # ----------------------------------------------------
-        # Verificações
-        # ----------------------------------------------------
-
-        if [ ! -f "$DOCKERFILE" ]; then
-          echo "ERRO: Dockerfile não encontrado:"
-          echo "$DOCKERFILE"
-          exit 1
-        fi
-
-        if [ ! -d "$CONTEXT" ]; then
-          echo "ERRO: contexto Docker não encontrado:"
-          echo "$CONTEXT"
-          exit 1
-        fi
-
-        echo "Dockerfile encontrado:"
-        ls -l "$DOCKERFILE"
-
-        echo ""
-
-        echo "Conteúdo do contexto:"
-        ls -la "$CONTEXT"
-
-        # ----------------------------------------------------
-        # BuildKit
-        # ----------------------------------------------------
-
-        echo ""
-        echo "======================================"
-        echo "Executando BuildKit"
-        echo "======================================"
-
-        buildctl \
-          --addr tcp://buildkitd:1234 \
-          build \
-          --frontend dockerfile.v0 \
-          --local context="$CONTEXT" \
-          --local dockerfile="$(dirname "$DOCKERFILE")" \
-          --opt filename="$(basename "$DOCKERFILE")" \
-          --output "type=image,name=${IMAGE},push=true"
-
-        echo ""
-        echo "======================================"
-        echo "Imagem publicada"
-        echo "======================================"
-
-        echo "$IMAGE"
-
-
-  # ==========================================================
-  # BUILDKIT DAEMON
-  # ==========================================================
-
-  sidecars:
-
-    - name: buildkitd
-
-      image: moby/buildkit:v0.12.5
-
-      securityContext:
-        privileged: true
-
-      command:
-        - buildkitd
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
 
       args:
-        - --addr
-        - tcp://0.0.0.0:1234
 
+        - "--dockerfile=$(workspaces.source.path)/$(params.dockerfile)"
+        - "--context=$(workspaces.source.path)/$(params.context)"
+        - "--destination=$(params.image)"
+
+      workingDir: $(workspaces.source.path)
 
 ---
 # ============================================================
