@@ -5,117 +5,96 @@ metadata:
   name: teste-pipeline
 
 spec:
+
   params:
-    - name: repo-url
-      type: string
 
-    - name: revision
+    - name: git-url
       type: string
-      default: main
+      description: URL do repositório Git
+      default: "https://github.com/esensato/icl-2026-02.git"
 
-    - name: image
+    - name: git-revision
       type: string
-      description: Nome completo da imagem a ser publicada
+      description: Branch ou revisão
+      default: "main"
+
+    - name: image-name
+      type: string
+      description: Nome da imagem no IBM Container Registry
+      default: "teste-cicd"
+
+    - name: registry-namespace
+      type: string
+      description: Namespace do IBM Container Registry
+      default: "SEU_NAMESPACE"
+
+    - name: registry-region
+      type: string
+      description: Região do IBM Container Registry
+      default: "us-south"
 
   workspaces:
+
     - name: source
 
   tasks:
 
+    # ============================================================
+    # 1. CLONA O REPOSITÓRIO
+    # ============================================================
+
     - name: clone
+
       taskRef:
-        name: git-clone
+        name: git-clone-repo
 
       params:
+
         - name: url
-          value: $(params.repo-url)
+          value: $(params.git-url)
 
         - name: revision
-          value: $(params.revision)
-
-        - name: deleteExisting
-          value: "true"
+          value: $(params.git-revision)
 
       workspaces:
+
         - name: output
           workspace: source
 
-    - name: build-and-push
+
+    # ============================================================
+    # 2. BUILD + PUSH DA IMAGEM
+    # ============================================================
+
+    - name: build-image
+
       runAfter:
         - clone
 
       taskRef:
-        name: kaniko
+        name: icr-containerize
 
       params:
-        - name: IMAGE
-          value: $(params.image)
 
-        - name: DOCKERFILE
-          value: ./Dockerfile
+        - name: registry-region
+          value: $(params.registry-region)
 
-        - name: CONTEXT
-          value: $(workspaces.source.path)
+        - name: registry-namespace
+          value: $(params.registry-namespace)
+
+        - name: image-name
+          value: $(params.image-name)
+
+        - name: path-to-context
+          value: "."
+
+        - name: path-to-dockerfile
+          value: "."
+
+        - name: dockerfile
+          value: "Dockerfile"
 
       workspaces:
+
         - name: source
           workspace: source
-
-kind: PipelineRun
-
-metadata:
-  name: teste-pipeline-run
-
-  annotations:
-    pipelinesascode.tekton.dev/on-event: "[push]"
-    pipelinesascode.tekton.dev/on-target-branch: "[main]"
-
-spec:
-  pipelineRef:
-    name: teste-pipeline
-
-  params:
-    - name: repo-url
-      value: "{{repo_url}}"
-
-    - name: revision
-      value: "{{revision}}"
-
-    - name: image
-      value: "ghcr.io/minha-organizacao/teste:latest"
-
-  workspaces:
-    - name: source
-      emptyDir: {}
-
-kind: TriggerBinding
-
-metadata:
-  name: teste-cicd-binding
-
-spec:
-
-  params:
-
-    - name: git-url
-      value: $(body.repository.clone_url)
-
-    - name: git-revision
-      value: $(body.ref)
-
-kind: TriggerTemplate
-
-metadata:
-  name: teste-cicd-template
-
-spec:
-
-  params:
-
-    - name: git-url
-
-    - name: git-revision
-
-    - name: image
-
-  resourcetemplates:
