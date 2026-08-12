@@ -70,7 +70,7 @@ spec:
 
   params:
     - name: mensagem
-      value: "NOVA MENSAGEM!!!"
+      value: "$(params.mensagem)"
 
 
 ---
