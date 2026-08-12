@@ -1,0 +1,51 @@
+apiVersion: tekton.dev/v1
+kind: Task
+
+metadata:
+  name: tarefa-1
+spec:
+  params:
+    - name: mensagem
+      type: string
+      description: Mensagem
+      default: "Boa Noite"
+  steps:
+    - name: exibir-mensagem
+      script: |
+        #!/bin/sh
+
+        echo "======================================"
+        echo "$(params.mensagem)" 
+        echo "======================================"
+
+---
+
+apiVersion: tekton.dev/v1
+kind: Pipeline
+
+metadata:
+  name: demo-pipeline-tekton
+
+spec:
+
+  params:
+
+    - name: mensagem
+      type: string
+      description: Mensagem
+      default: "Boa Noite!"
+
+  tasks:
+
+    - name: Pipeline-tarefa-1
+
+      taskRef:
+        name: tarefa-1
+
+      params:
+
+        - name: mensagem
+          value: $(params.mensagem)
+
+
+---
