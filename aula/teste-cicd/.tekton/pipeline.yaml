@@ -1,5 +1,58 @@
 # ============================================================
-# 1. PIPELINE
+# TASK: CLONE DO REPOSITÓRIO
+# ============================================================
+
+apiVersion: tekton.dev/v1
+kind: Task
+
+metadata:
+  name: git-clone-repo
+
+spec:
+
+  params:
+
+    - name: url
+      type: string
+      description: URL do repositório Git
+
+    - name: revision
+      type: string
+      default: main
+      description: Branch ou commit
+
+  workspaces:
+
+    - name: output
+      description: Workspace onde o repositório será clonado
+
+  steps:
+
+    - name: clone
+
+      image: alpine/git:latest
+
+      script: |
+
+        # Remove conteúdo anterior do workspace
+        rm -rf "$(workspaces.output.path)"/*
+
+        echo "Clonando:"
+        echo "$(params.url)"
+
+        echo "Revision:"
+        echo "$(params.revision)"
+
+        git clone \
+          --depth 1 \
+          --branch "$(params.revision)" \
+          "$(params.url)" \
+          "$(workspaces.output.path)"
+
+
+---
+# ============================================================
+# PIPELINE
 # ============================================================
 
 apiVersion: tekton.dev/v1
@@ -9,25 +62,28 @@ metadata:
   name: teste-pipeline
 
 spec:
+
   params:
 
     - name: git-url
       type: string
       description: URL do repositório Git
+      default: "https://github.com/esensato/icl-2026-02.git"
 
     - name: git-revision
       type: string
-      description: Branch ou revisão do Git
+      description: Branch do Git
       default: main
 
     - name: image-name
       type: string
-      description: Nome da imagem que será criada
+      description: Nome da imagem
       default: teste-cicd
 
     - name: registry-namespace
       type: string
       description: Namespace do IBM Container Registry
+      default: SEU_NAMESPACE
 
     - name: registry-region
       type: string
@@ -41,7 +97,7 @@ spec:
   tasks:
 
     # --------------------------------------------------------
-    # CLONE DO REPOSITÓRIO
+    # CLONE
     # --------------------------------------------------------
 
     - name: clone
@@ -64,7 +120,7 @@ spec:
 
 
     # --------------------------------------------------------
-    # BUILD + PUSH DA IMAGEM
+    # BUILD + PUSH
     # --------------------------------------------------------
 
     - name: build-image
@@ -103,7 +159,7 @@ spec:
 
 ---
 # ============================================================
-# 2. TRIGGER BINDING
+# TRIGGER BINDING
 # ============================================================
 
 apiVersion: triggers.tekton.dev/v1beta1
@@ -113,6 +169,7 @@ metadata:
   name: teste-pipeline-binding
 
 spec:
+
   params:
 
     - name: git-url
@@ -133,7 +190,7 @@ spec:
 
 ---
 # ============================================================
-# 3. TRIGGER TEMPLATE
+# TRIGGER TEMPLATE
 # ============================================================
 
 apiVersion: triggers.tekton.dev/v1beta1
@@ -159,6 +216,7 @@ spec:
   resourcetemplates:
 
     - apiVersion: tekton.dev/v1
+
       kind: PipelineRun
 
       metadata:
@@ -194,7 +252,7 @@ spec:
 
 ---
 # ============================================================
-# 4. EVENT LISTENER
+# EVENT LISTENER
 # ============================================================
 
 apiVersion: triggers.tekton.dev/v1beta1
