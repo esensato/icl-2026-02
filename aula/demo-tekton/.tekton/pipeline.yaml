@@ -85,7 +85,9 @@ metadata:
   name: teste-pipeline-binding
 
 spec:
-  params: []
+  params:
+      - name: mensagem
+        value: $(body.mensagem)
 
 
 ---
@@ -114,7 +116,7 @@ spec:
 
         params:
           - name: mensagem
-            value: "MENSAGEM VIA TRIGGER"
+            value: "$(tt.params.mensagem)"
 
 
 ---
