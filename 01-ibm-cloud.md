@@ -556,6 +556,10 @@ ibmcloud cr namespace-add meu-namespace
 
 ibmcloud cr images
 ```
+- Para remover um **namespace**
+```bash
+ibmcloud cr namespace-rm meu-namespace -f
+```
 - Depois de criar o **toolchain** e publicar a imagem com o **tekton**
 ```bash
 ibmcloud cr login --client docker
