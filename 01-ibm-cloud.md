@@ -510,6 +510,61 @@ main();
 - A atualização e exclusão de documentos exigem informar o campo **_rev**, que representa a revisão atual do documento.
 - Os documentos são armazenados em formato **JSON**, característica típica dos bancos NoSQL orientados a documentos como o Cloudant e o CouchDB.
 
+### Ferramenta CLI (ibmcloud)
+- Efetuar o download e instalação [ibmcloud](https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli)
+- Para testar e listar os *plug-ins*
+```bash
+ibmcloud --version
+ibmcloud plugin list
+```
+- Verificar a chave de API `https://cloud.ibm.com/iam/apikeys`
+- Efetuar o login na **IBM Cloud**, listar os grupos de recursos e selecionar um grupo (*Default*)
+```bash
+ibmcloud login --apikey IBMCLOUD_API_KEY
+ibmcloud resource groups
+ibmcloud target -g 
+```
+- Listar os recursos instanciados
+```bash
+ibmcloud resource service-instances
+```
+- Para remover um recurso
+```bash
+ibmcloud resource service-instance-delete NOME_OU_ID
+```
+- Criar uma instância de serviço (por exemplo, **continuous-delivery**) chamada **cicd** com plano **lite** na região **br-sao**
+```ba
+ibmcloud resource service-instance-create cicd continuous-delivery lite br-sao
+```
+- Definindo a região atual
+```bash
+ibmcloud target -r br-sao
+```
+- Visualizando a cadeia de ferramentas
+```bash
+ibmcloud dev toolchains
+```
+### Container Registry
+```bash
+ibmcloud plugin install container-registry
+
+ibmcloud cr region-set br-sao
+
+ibmcloud cr namespace-list
+
+ibmcloud cr namespace-add meu-namespace
+
+ibmcloud cr images
+```
+- Depois de criar o **toolchain** e publicar a imagem com o **tekton**
+```bash
+ibmcloud cr login --client docker
+
+docker pull IMAGEM...
+
+docker run -it ...
+```
+
 ### Deploy de Aplicações
 - Criar uma instância de **Continuous Delivery**
 - Criar uma **Toolchain (Cadeia de Ferramentas)**

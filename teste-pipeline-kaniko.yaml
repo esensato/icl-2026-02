@@ -1,0 +1,439 @@
+# ============================================================
+# TASK 1 - CLONE DO REPOSITÓRIO
+# ============================================================
+
+apiVersion: tekton.dev/v1
+kind: Task
+
+metadata:
+  name: git-clone-repo
+
+spec:
+
+  params:
+
+    - name: url
+      type: string
+      description: URL do repositório Git
+      default: https://github.com/esensato/icl-2026-02.git
+
+    - name: revision
+      type: string
+      default: main
+      description: Branch ou commit
+
+  workspaces:
+
+    - name: output
+      description: Workspace onde o código será clonado
+
+  steps:
+
+    - name: clone
+
+      image: alpine/git:latest
+
+      script: |
+        #!/bin/sh
+
+        set -eu
+
+        echo "======================================"
+        echo "Clonando repositório"
+        echo "======================================"
+
+        echo "URL:"
+        echo "$(params.url)"
+
+        echo "Revision:"
+        echo "$(params.revision)"
+
+        # ------------------------------------------------------
+        # Normaliza refs/heads/main para main
+        # ------------------------------------------------------
+
+        REVISION="$(params.revision)"
+
+        case "$REVISION" in
+          refs/heads/*)
+            REVISION="${REVISION#refs/heads/}"
+            ;;
+        esac
+
+        echo "Revision utilizada:"
+        echo "$REVISION"
+
+        # ------------------------------------------------------
+        # Limpa workspace
+        # ------------------------------------------------------
+
+        rm -rf "$(workspaces.output.path)"/*
+
+        # ------------------------------------------------------
+        # Clone
+        # ------------------------------------------------------
+
+        git clone \
+          --depth 1 \
+          --branch "$REVISION" \
+          "$(params.url)" \
+          "$(workspaces.output.path)"
+
+        echo ""
+        echo "======================================"
+        echo "Repositório clonado"
+        echo "======================================"
+
+        ls -la "$(workspaces.output.path)"
+
+        echo ""
+        echo "Aplicação:"
+        ls -la "$(workspaces.output.path)/aula/teste-cicd"
+
+
+---
+# ============================================================
+# TASK 2 - BUILD E PUSH PARA IBM CONTAINER REGISTRY
+# ============================================================
+
+apiVersion: tekton.dev/v1
+kind: Task
+
+metadata:
+  name: build-and-push
+
+spec:
+
+  params:
+
+    - name: image
+      type: string
+      description: Imagem completa que será criada
+      default: icr.io/esensato-repo/teste-cicd:latest
+
+    - name: context
+      type: string
+      description: Caminho relativo ao contexto Docker
+      default: aula/teste-cicd
+
+    - name: dockerfile
+      type: string
+      description: Caminho relativo ao Dockerfile
+      default: aula/teste-cicd/Dockerfile
+
+    - name: api-key-secret
+      type: string
+      description: Secret contendo a API Key do IBM Cloud
+      default: secure-properties
+
+    - name: api-key-secret-key
+      type: string
+      description: Chave dentro do Secret que contém a API Key
+      default: apikey
+
+  workspaces:
+
+    - name: source
+      description: Código fonte da aplicação
+
+  volumes:
+
+    - name: kaniko-docker-config
+      emptyDir: {}
+
+  steps:
+
+    # ========================================================
+    # CONFIGURA CREDENCIAL DO IBM CONTAINER REGISTRY
+    # ========================================================
+
+    - name: configure-registry
+
+      image: alpine:3.20
+
+      env:
+
+        - name: IBM_CLOUD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: $(params.api-key-secret)
+              key: $(params.api-key-secret-key)
+
+        - name: IMAGE
+          value: $(params.image)
+
+      volumeMounts:
+
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+
+      script: |
+
+        #!/bin/sh
+
+        set -eu
+
+        echo "======================================"
+        echo "Configurando IBM Container Registry"
+        echo "======================================"
+
+        REGISTRY="$(echo "$IMAGE" | cut -d/ -f1)"
+
+        echo "Registry:"
+        echo "$REGISTRY"
+
+        # IBM Container Registry:
+        # username = iamapikey
+        # password = IBM Cloud API Key
+
+        AUTH="$(printf '%s' "iamapikey:${IBM_CLOUD_API_KEY}" | base64 | tr -d '\n')"
+
+        mkdir -p /kaniko/.docker
+
+        cat > /kaniko/.docker/config.json <<EOF
+        {
+          "auths": {
+            "${REGISTRY}": {
+              "auth": "${AUTH}"
+            }
+          }
+        }
+        EOF
+
+        echo ""
+        echo "Docker config criado para o Kaniko."
+
+    # ========================================================
+    # BUILD + PUSH COM KANIKO
+    # ========================================================
+
+    - name: build-and-push
+
+      image: gcr.io/kaniko-project/executor:v1.23.2
+
+      volumeMounts:
+
+        - name: kaniko-docker-config
+          mountPath: /kaniko/.docker
+
+      args:
+
+        - "--dockerfile=$(workspaces.source.path)/$(params.dockerfile)"
+        - "--context=$(workspaces.source.path)/$(params.context)"
+        - "--destination=$(params.image)"
+
+      workingDir: $(workspaces.source.path)
+
+---
+# ============================================================
+# PIPELINE
+# ============================================================
+
+apiVersion: tekton.dev/v1
+kind: Pipeline
+
+metadata:
+  name: teste-pipeline
+
+spec:
+
+  params:
+
+    # --------------------------------------------------------
+    # Git
+    # --------------------------------------------------------
+
+    - name: git-url
+      type: string
+      description: URL do repositório Git
+      default: https://github.com/esensato/icl-2026-02.git
+
+
+    - name: git-revision
+      type: string
+      description: Branch ou commit
+
+      default: main
+
+
+    # --------------------------------------------------------
+    # Container Registry
+    # --------------------------------------------------------
+
+    - name: image
+      type: string
+      description: Imagem que será publicada
+
+      default: icr.io/esensato-repo/teste-cicd:latest
+
+
+  # ----------------------------------------------------------
+  # Workspace
+  # ----------------------------------------------------------
+
+  workspaces:
+
+    - name: source
+
+
+  # ----------------------------------------------------------
+  # Tasks
+  # ----------------------------------------------------------
+
+  tasks:
+
+    # ========================================================
+    # CLONE
+    # ========================================================
+
+    - name: clone
+
+      taskRef:
+        name: git-clone-repo
+
+      params:
+
+        - name: url
+          value: $(params.git-url)
+
+        - name: revision
+          value: $(params.git-revision)
+
+      workspaces:
+
+        - name: output
+          workspace: source
+
+
+    # ========================================================
+    # BUILD + PUSH
+    # ========================================================
+
+    - name: build-image
+
+      runAfter:
+        - clone
+
+      taskRef:
+        name: build-and-push
+
+      params:
+
+        - name: image
+          value: $(params.image)
+
+        - name: context
+          value: aula/teste-cicd
+
+        - name: dockerfile
+          value: aula/teste-cicd/Dockerfile
+
+      workspaces:
+
+        - name: source
+          workspace: source
+
+
+---
+# ============================================================
+# TRIGGER BINDING
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+
+metadata:
+  name: teste-pipeline-binding
+
+spec:
+
+  params:
+
+    - name: git-url
+      value: $(body.repository.clone_url)
+
+    - name: git-revision
+      value: $(body.ref)
+
+    - name: image
+      value: icr.io/esensato-repo/teste-cicd:latest
+
+
+---
+# ============================================================
+# TRIGGER TEMPLATE
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+
+metadata:
+  name: teste-pipeline-template
+
+spec:
+
+  params:
+
+    - name: git-url
+
+    - name: git-revision
+
+    - name: image
+
+
+  resourcetemplates:
+
+    - apiVersion: tekton.dev/v1
+
+      kind: PipelineRun
+
+      metadata:
+        generateName: teste-pipeline-
+
+      spec:
+
+        pipelineRef:
+          name: teste-pipeline
+
+        params:
+
+          - name: git-url
+            value: $(tt.params.git-url)
+
+          - name: git-revision
+            value: $(tt.params.git-revision)
+
+          - name: image
+            value: $(tt.params.image)
+
+        workspaces:
+
+          - name: source
+
+            emptyDir: {}
+
+
+---
+# ============================================================
+# EVENT LISTENER
+# ============================================================
+
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+
+metadata:
+  name: teste-pipeline-listener
+
+spec:
+
+  triggers:
+
+    - name: teste-pipeline-trigger
+
+      bindings:
+
+        - ref: teste-pipeline-binding
+
+      template:
+
+        ref: teste-pipeline-template
