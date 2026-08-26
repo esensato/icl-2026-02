@@ -1,0 +1,131 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Cloudant Token API",
+        "description": "API responsável por obter um access token do IBM Cloud IAM a partir de uma API Key.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://backend-n75y.onrender.com"
+        }
+    ],
+    "paths": {
+        "/token-cloudant": {
+            "post": {
+                "summary": "Obter token do IBM Cloud IAM",
+                "description": "Recebe uma API Key do IBM Cloud e solicita ao IBM Cloud IAM um access token.",
+                "operationId": "getCloudantToken",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TokenRequest"
+                            },
+                            "example": {
+                                "apikey": "SUA_API_KEY"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token obtido com sucesso.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenResponse"
+                                },
+                                "example": {
+                                    "access_token": "eyJraWQiOiJ..."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "API Key não informada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "example": {
+                                    "error": "O atributo 'apikey' é obrigatório."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "API Key inválida ou não autorizada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "example": {
+                                    "error": "API Key inválida."
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno ao obter o token.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "example": {
+                                    "error": "Erro interno ao obter o token."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "TokenRequest": {
+                "type": "object",
+                "required": [
+                    "apikey"
+                ],
+                "properties": {
+                    "apikey": {
+                        "type": "string",
+                        "description": "API Key utilizada para autenticação no IBM Cloud IAM.",
+                        "example": "SUA_API_KEY"
+                    }
+                }
+            },
+            "TokenResponse": {
+                "type": "object",
+                "required": [
+                    "access_token"
+                ],
+                "properties": {
+                    "access_token": {
+                        "type": "string",
+                        "description": "Token de acesso retornado pelo IBM Cloud IAM.",
+                        "example": "eyJraWQiOiJ..."
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "required": [
+                    "error"
+                ],
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Mensagem de erro."
+                    }
+                }
+            }
+        }
+    }
+}
