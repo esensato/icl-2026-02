@@ -1,0 +1,742 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+
+    --primary: #1769aa;
+    --primary-dark: #0b4775;
+
+    --secondary: #00a6a6;
+
+    --dark: #102a43;
+    --text: #486581;
+    --light: #f4f8fb;
+
+    --white: #ffffff;
+
+    --border: #d9e2ec;
+}
+
+body {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    color: var(--dark);
+
+    background: var(--white);
+
+    line-height: 1.6;
+}
+
+.container {
+
+    width: 90%;
+
+    max-width: 1180px;
+
+    margin: 0 auto;
+}
+
+
+/* HEADER */
+
+.header {
+
+    height: 76px;
+
+    background: white;
+
+    border-bottom:
+        1px solid var(--border);
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 100;
+}
+
+.header-content {
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+.logo {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+.logo-icon {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: var(--primary);
+
+    color: white;
+
+    font-size: 25px;
+}
+
+.logo-name {
+
+    font-size: 19px;
+
+    font-weight: bold;
+
+    color: var(--dark);
+}
+
+.logo-subtitle {
+
+    font-size: 11px;
+
+    color: var(--text);
+}
+
+.nav {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 28px;
+}
+
+.nav a {
+
+    color: var(--text);
+
+    text-decoration: none;
+
+    font-size: 14px;
+}
+
+.nav a:hover {
+
+    color: var(--primary);
+}
+
+.login-button {
+
+    border: 0;
+
+    background: var(--primary);
+
+    color: white;
+
+    padding: 11px 20px;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-weight: bold;
+}
+
+
+/* HERO */
+
+.hero {
+
+    background:
+        linear-gradient(135deg,
+            #f1f8fd,
+            #e7f5f5);
+
+    padding: 90px 0;
+}
+
+.hero-content {
+
+    display: grid;
+
+    grid-template-columns:
+        1.2fr 0.8fr;
+
+    gap: 80px;
+
+    align-items: center;
+}
+
+.tag {
+
+    display: inline-block;
+
+    color: var(--primary);
+
+    font-weight: bold;
+
+    font-size: 12px;
+
+    letter-spacing: 1.5px;
+
+    margin-bottom: 15px;
+}
+
+.hero h1 {
+
+    font-size: 58px;
+
+    line-height: 1.05;
+
+    margin-bottom: 25px;
+}
+
+.hero h1 span {
+
+    color: var(--primary);
+}
+
+.hero p {
+
+    color: var(--text);
+
+    font-size: 18px;
+
+    max-width: 560px;
+
+    margin-bottom: 30px;
+}
+
+.hero-buttons {
+
+    display: flex;
+
+    gap: 15px;
+}
+
+.primary-button {
+
+    border: none;
+
+    background: var(--primary);
+
+    color: white;
+
+    padding: 14px 24px;
+
+    border-radius: 7px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+.primary-button:hover {
+
+    background: var(--primary-dark);
+}
+
+.secondary-button {
+
+    border:
+        1px solid var(--primary);
+
+    background: white;
+
+    color: var(--primary);
+
+    padding: 14px 24px;
+
+    border-radius: 7px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+
+/* CARD */
+
+.hero-card {
+
+    background:
+        linear-gradient(145deg,
+            #1769aa,
+            #073b5c);
+
+    color: white;
+
+    border-radius: 22px;
+
+    padding: 32px;
+
+    min-height: 330px;
+
+    box-shadow:
+        0 20px 50px rgba(0, 60, 100, .22);
+
+    display: flex;
+
+    flex-direction: column;
+}
+
+.cloud-large {
+
+    font-size: 50px;
+
+    margin-bottom: 20px;
+
+    opacity: .9;
+}
+
+.balance-title {
+
+    font-size: 13px;
+
+    opacity: .75;
+}
+
+.balance {
+
+    font-size: 36px;
+
+    font-weight: bold;
+
+    margin: 5px 0 8px;
+}
+
+.account-number {
+
+    font-size: 13px;
+
+    opacity: .7;
+}
+
+.card-footer {
+
+    margin-top: auto;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    font-size: 13px;
+}
+
+
+/* SERVICES */
+
+.services {
+
+    padding: 90px 0;
+}
+
+.section-title {
+
+    text-align: center;
+
+    margin-bottom: 50px;
+}
+
+.section-title span {
+
+    color: var(--primary);
+
+    font-weight: bold;
+
+    font-size: 12px;
+
+    letter-spacing: 1.5px;
+}
+
+.section-title h2 {
+
+    font-size: 36px;
+
+    margin: 10px 0;
+}
+
+.section-title p {
+
+    color: var(--text);
+}
+
+.service-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 20px;
+}
+
+.service-card {
+
+    padding: 28px;
+
+    border:
+        1px solid var(--border);
+
+    border-radius: 12px;
+
+    transition: .2s;
+}
+
+.service-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 10px 30px rgba(16, 42, 67, .08);
+}
+
+.service-icon {
+
+    font-size: 30px;
+
+    margin-bottom: 15px;
+}
+
+.service-card h3 {
+
+    margin-bottom: 10px;
+}
+
+.service-card p {
+
+    color: var(--text);
+
+    font-size: 14px;
+
+    margin-bottom: 15px;
+}
+
+.service-card a {
+
+    color: var(--primary);
+
+    font-size: 14px;
+
+    font-weight: bold;
+
+    text-decoration: none;
+}
+
+
+/* ACCOUNT */
+
+.account {
+
+    background: var(--light);
+
+    padding: 90px 0;
+}
+
+.account-content {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 100px;
+
+    align-items: center;
+}
+
+.account h2 {
+
+    font-size: 38px;
+
+    line-height: 1.2;
+
+    margin-bottom: 20px;
+}
+
+.account p {
+
+    color: var(--text);
+
+    margin-bottom: 25px;
+}
+
+.account ul {
+
+    list-style: none;
+
+    margin-bottom: 30px;
+}
+
+.account li {
+
+    margin: 12px 0;
+
+    color: var(--text);
+}
+
+.phone {
+
+    width: 290px;
+
+    min-height: 500px;
+
+    margin: auto;
+
+    background: white;
+
+    border-radius: 30px;
+
+    padding: 28px 20px;
+
+    box-shadow:
+        0 20px 50px rgba(16, 42, 67, .12);
+}
+
+.phone-header {
+
+    font-weight: bold;
+
+    text-align: center;
+
+    margin-bottom: 40px;
+}
+
+.phone-balance small {
+
+    display: block;
+
+    color: var(--text);
+
+    font-size: 12px;
+}
+
+.phone-balance strong {
+
+    display: block;
+
+    font-size: 26px;
+
+    margin-top: 5px;
+}
+
+.pix-button {
+
+    background: #e5f7f7;
+
+    color: var(--secondary);
+
+    padding: 12px;
+
+    text-align: center;
+
+    border-radius: 8px;
+
+    margin: 25px 0;
+}
+
+.transactions>div {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    border-bottom:
+        1px solid var(--border);
+
+    padding: 15px 0;
+
+    font-size: 12px;
+}
+
+.positive {
+
+    color: #159957;
+}
+
+
+/* SECURITY */
+
+.security {
+
+    padding: 60px 0;
+}
+
+.security-content {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 30px;
+
+    background:
+        #edf8f8;
+
+    padding: 35px;
+
+    border-radius: 14px;
+}
+
+.security-icon {
+
+    font-size: 45px;
+}
+
+.security h2 {
+
+    margin-bottom: 5px;
+}
+
+.security p {
+
+    color: var(--text);
+}
+
+
+/* FOOTER */
+
+.footer {
+
+    background: #102a43;
+
+    color: white;
+
+    padding-top: 45px;
+}
+
+.footer-content {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    padding-bottom: 35px;
+}
+
+.footer-logo {
+
+    font-size: 20px;
+
+    font-weight: bold;
+}
+
+.footer p {
+
+    color: #bcccdc;
+
+    font-size: 13px;
+}
+
+.footer-links {
+
+    display: flex;
+
+    gap: 25px;
+
+    align-items: center;
+}
+
+.footer-links a {
+
+    color: #d9e2ec;
+
+    text-decoration: none;
+
+    font-size: 13px;
+}
+
+.copyright {
+
+    text-align: center;
+
+    border-top:
+        1px solid rgba(255, 255, 255, .1);
+
+    padding: 20px;
+
+    color: #9fb3c8;
+
+    font-size: 12px;
+}
+
+
+/* RESPONSIVO */
+
+@media (max-width: 900px) {
+
+    .nav a {
+        display: none;
+    }
+
+    .hero-content,
+    .account-content {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .hero h1 {
+
+        font-size: 44px;
+
+    }
+
+    .service-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .service-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .hero-buttons {
+
+        flex-direction: column;
+
+    }
+
+    .footer-content {
+
+        flex-direction: column;
+
+        gap: 25px;
+
+    }
+
+    .footer-links {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+}

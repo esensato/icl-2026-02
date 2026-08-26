@@ -541,7 +541,7 @@ main();
 - Um exemplo de tabela pode ser visto [aqui](https://github.com/esensato/icl-2026-02/blob/main/assistant-tabela.json)
 - Outro exemplo, para incluir um botão pode ser visto [aqui](https://github.com/esensato/icl-2026-02/blob/main/assistant-botao.json)
 - Para demais tipos de respostas conferir [aqui](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-response-types-reference)
-- Um tutorial para realizar *upload* de arquivos pelo **watsonx assistant* pode ser visto [aqui](https://developer.ibm.com/tutorials/awb-watsonx-assistant-upload-a-file-from-the-web-chat-interface/)
+- Um tutorial para realizar *upload* de arquivos pelo **watsonx assistant** pode ser visto [aqui](https://developer.ibm.com/tutorials/awb-watsonx-assistant-upload-a-file-from-the-web-chat-interface/)
 #### Exercícios
 - Implementar novos diálogos:
     - Permitir que o aluno consulte os seus créditos
@@ -635,7 +635,10 @@ ibmcloud resource service-instances
 ```bash
 ibmcloud resource service-instance-delete NOME_OU_ID
 ```
-
+- Listar o catálogo de serviços disponíveis
+```bash
+ibmcloud catalog service-marketplace
+```
 ### IBM Cloud Object Storage
 - Descrever o serviço
 ```bash
@@ -760,429 +763,84 @@ main();
 ```
 - Criar um arquivo de testes `upload.txt`
 
-### Conectar DB2
+### DB2
 - Para referência à API clicar [aqui](https://cloud.ibm.com/apidocs/db2-on-cloud/db2-on-cloud-v4)
-- Definir as variáveis para a obter o token de conexão
-```python
-url = ""
-userid = ""
-password = ""
-deployment_id = ""
-```
-- Obter o token (exemplo em *python*)
-```python
-import http.client
-import ssl
-import json
-
-context = ssl._create_unverified_context()
-
-conn = http.client.HTTPSConnection(url, context=context)
-
-payload = {"userid":userid,"password":password}
-
-headers = {
-    'content-type': "application/json",
-    'x-deployment-id': deployment_id
-    }
-
-conn.request("POST", "/dbapi/v4/auth/tokens", json.dumps(payload), headers)
-
-res = conn.getresponse()
-data = res.read()
-
-print(json.loads(data.decode("utf-8"))["token"])
-```
-- Criar as seguintes variáveis de sessão:
-    - `DB2_DEPLOYMENT_ID`
-    - `DB2_USERNAME`
-    - `DB2_PASSWORD`
-    - `DB2_TOKEN`: inicialmente vazia pois irá armazenar o *token* gerado para acesso ao banco de dados
-- Obter o token por meio da especificação *OpenAPI* abaixo
-- Trocar `"url": "https://{HOSTNAME}"` pelo *hostname* fornecido nas credencias do DB2 criado na cloud
-- O `HOSTNAME` deve ser obtido do parâmetro **Nome do host da API de REST** que fica na guia **Conexões** dentro do banco de dados Db2 criado na **IBM Cloud**
-```json
-{
-  "openapi": "3.0.3",
-  "info": {
-    "title": "DB API Authentication",
-    "version": "1.0.0",
-    "description": "Endpoint para autenticação e geração de token."
-  },
-  "servers": [
-        {
-            "url": "https://{HOSTNAME}",
-            "variables": {
-                "HOSTNAME": {
-                    "default": "example.db2.cloud.ibm.com"
-                }
-            }
-        }
-  ],
-  "paths": {
-    "/dbapi/v4/auth/tokens": {
-      "post": {
-        "summary": "Generate authentication token",
-        "operationId": "generateAuthToken",
-        "parameters": [
-          {
-            "name": "x-deployment-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Deployment identifier"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "userid",
-                  "password",
-                  "separator",
-                  "stop_on_error"
-                ],
-                "properties": {
-                  "userid": {
-                    "type": "string",
-                    "example": "user123"
-                  },
-                  "password": {
-                    "type": "string",
-                    "example": "mypassword"
-                  },
-                  "separator": {
-                    "type": "string",
-                    "enum": [";"]
-                  },
-                  "stop_on_error": {
-                    "type": "string",
-                    "enum": ["no"]
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Authentication token generated",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "userid": {
-                      "type": "string",
-                      "example": "user123"
-                    },
-                    "token": {
-                      "type": "string",
-                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-- Armazenar o *token* em uma variável
-- Efetuar uma consulta *SQL* ao banco de dados e obter o `id` da execução (assíncrona)
-```python
-import http.client
-import ssl
-import json
-
-context = ssl._create_unverified_context()
-
-conn = http.client.HTTPSConnection(url, context=context)
-
-payload = {"commands":"select * from disciplinas", "separator":";","stop_on_error":"no"}
-
-headers = {
-    'content-type': "application/json",
-    'authorization': f"Bearer {token}",
-     'x-deployment-id': deployment_id
-}
-
-conn.request("POST", "/dbapi/v4/sql_jobs", json.dumps(payload), headers)
-
-res = conn.getresponse()
-data = res.read()
-
-print(json.loads(data.decode("utf-8"))["id"])
-```
-- Exemplo especificação *OpenAPI*
-```json
-{
-    "openapi": "3.0.3",
-    "info": {
-        "title": "Db2 SQL Jobs API",
-        "version": "1.0.0",
-        "description": "API para submissão de comandos SQL assíncronos no Db2 on Cloud."
-    },
-    "servers": [
-        {
-            "url": "https://{HOSTNAME}",
-            "variables": {
-                "HOSTNAME": {
-                    "default": "example.db2.cloud.ibm.com"
-                }
-            }
-        }
-    ],
-    "paths": {
-        "/dbapi/v4/sql_jobs": {
-            "post": {
-                "summary": "Submeter Job SQL",
-                "operationId": "submitSqlJob",
-                "parameters": [
-                    {
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true,
-                        "description": "Token Bearer de autenticação.",
-                        "schema": {
-                            "type": "string",
-                            "example": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                        }
-                    },
-                    {
-                        "name": "x-deployment-id",
-                        "in": "header",
-                        "required": true,
-                        "description": "Identificador do deployment do serviço.",
-                        "schema": {
-                            "type": "string",
-                            "example": "zzz"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": [
-                                    "commands"
-                                ],
-                                "properties": {
-                                    "commands": {
-                                        "type": "string",
-                                        "example": "select * FROM DISCIPLINAS"
-                                    },
-                                    "limit": {
-                                        "type": "integer",
-                                        "enum": [10]
-                                    },
-                                    "separator": {
-                                        "type": "string",
-                                        "enum": [";"]
-                                    },
-                                    "stop_on_error": {
-                                        "type": "string",
-                                        "enum": [
-                                            "no"
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Job criado com sucesso",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {
-                                            "type": "string",
-                                            "example": "1234567890abcdef"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Requisição inválida"
-                    },
-                    "401": {
-                        "description": "Não autorizado"
-                    }
-                }
-            }
-        }
-    }
-}
-```
-- Uma forma de definir a formação para o resultado da consulta é usando o `STRAGGR`
-```sql
-SELECT 
-LISTAGG(
-    '<div style="background-color: #f0f0f0;font-weight: bold;">' || id || '</div>' ||
-    '<div>' || nome_disciplina || '</div>' ||
-    '<div>Semestre: ' || semestre || '</div>' ||
-    '<div>Créditos: ' || creditos || '</div>'
-,'') 
-WITHIN GROUP (ORDER BY id) AS html
-FROM DISCIPLINAS WHERE SEMESTRE = ${SEMESTRE}
-```
-- Obter o restulado final da execução (atualizar o `id`)
+- Instanciar o serviço
 ```bash
-import http.client
-import ssl
-import json
-
-context = ssl._create_unverified_context()
-
-conn = http.client.HTTPSConnection(url, context=context)
-
-headers = {
-    'content-type': "application/json",
-    'authorization': f"Bearer {token}",
-     'x-deployment-id': deployment_id
-}
-
-conn.request("GET", f"/dbapi/v4/sql_jobs/1772644599186_733471460", headers=headers)
-
-res = conn.getresponse()
-data = res.read()
-
-print(data.decode("utf-8"))
+ibmcloud resource service-instance-create db2 dashdb-for-transactions free us-south
+ibmcloud resource service-instance db2
 ```
-```json
-{
-    "openapi": "3.0.3",
-    "info": {
-        "title": "Db2 SQL Job Result API",
-        "version": "1.0.0",
-        "description": "API para consultar o resultado de um SQL Job no Db2 on Cloud."
-    },
-    "servers": [
-        {
-            "url": "https://${HOSTNAME}",
-            "variables": {
-                "HOSTNAME": {
-                    "default": "example.db2.cloud.ibm.com"
-                }
-            }
-        }
-    ],
-    "paths": {
-        "/dbapi/v4/sql_jobs/{id}": {
-            "get": {
-                "summary": "Consultar resultado do SQL Job",
-                "operationId": "getSqlJobResult",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "description": "Identificador do job SQL.",
-                        "schema": {
-                            "type": "string",
-                            "example": "1772644599186_733471460"
-                        }
-                    },
-                    {
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true,
-                        "description": "Token Bearer de autenticação.",
-                        "schema": {
-                            "type": "string",
-                            "example": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                        }
-                    },
-                    {
-                        "name": "x-deployment-id",
-                        "in": "header",
-                        "required": true,
-                        "description": "Identificador do deployment do serviço.",
-                        "schema": {
-                            "type": "string",
-                            "example": "zzz"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Resultado do SQL Job",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "id": {
-                                            "type": "string"
-                                        },
-                                        "status": {
-                                            "type": "string",
-                                            "example": "completed"
-                                        },
-                                        "results": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "rows_count": {
-                                                        "type": "integer",
-                                                        "description": "Quantidade de linhas retornadas.",
-                                                        "example": 32
-                                                    },
-                                                    "rows": {
-                                                        "type": "array",
-                                                        "description": "Matriz contendo os resultados da consulta.",
-                                                        "items": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "string"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Requisição inválida"
-                    },
-                    "401": {
-                        "description": "Não autorizado"
-                    },
-                    "404": {
-                        "description": "Job não encontrado"
-                    }
-                }
-            }
-        }
+- Criando uma credencial de serviço
+```bash
+ibmcloud resource service-key-create credencial-db2 Manager --instance-name db2 --parameters '{"role": "Manager"}'
+```
+- Para exibir os detalhes da credencial
+```bash
+ibmcloud resource service-key credencial-db2
+```
+#### Exemplo de Aplicação
+- Criar um projeto **nodejs**
+```bash
+mkdir db2
+cd db2
+npm init -y
+npm install ibm_db
+```
+- Código exemplo
+```javascript
+const ibmdb = require('ibm_db');
+
+// String de conexão (DSN) usando os dados da sua service-key
+// A porta 50001 e o SECURITY=SSL são obrigatórios para a nuvem
+const connString = "DATABASE=BLUDB;" +
+                   "HOSTNAME=seu-host.databases.appdomain.cloud;" +
+                   "PORT=50001;" +
+                   "PROTOCOL=TCPIP;" +
+                   "UID=seu_usuario;" +
+                   "PWD=sua_senha;" +
+                   "SECURITY=SSL;";
+
+async function executarExemplo() {
+    try {
+        // 1. Abre a conexão de forma assíncrona
+        console.log("Conectando ao Db2 na IBM Cloud...");
+        const conn = await ibmdb.open(connString);
+        console.log("Conexão estabelecida com sucesso!\n");
+
+        // 2. Cria uma tabela de testes
+        console.log("Criando tabela 'PRODUTOS'...");
+        await conn.query("CREATE TABLE PRODUTOS (id INT, nome VARCHAR(50), preco DECIMAL(10,2))");
+
+        // 3. Insere dados na tabela
+        console.log("Inserindo dados...");
+        await conn.query("INSERT INTO PRODUTOS (id, nome, preco) VALUES (1, 'Notebook', 4500.00), (2, 'Mouse Sem Fio', 120.50)");
+
+        // 4. Executa uma consulta (SELECT)
+        console.log("Consultando dados cadastrados:");
+        const data = await conn.query("SELECT * FROM PRODUTOS");
+        console.table(data); // Exibe o resultado formatado em tabela no console
+
+        // 5. Limpa a estrutura (opcional - remove a tabela após o teste)
+        console.log("\nLimpando ambiente (Drop Table)...");
+        await conn.query("DROP TABLE PRODUTOS");
+
+        // 6. Fecha a conexão com o banco de dados
+        await conn.close();
+        console.log("Conexão fechada de forma segura.");
+
+    } catch (err) {
+        console.error("Erro durante a execução:", err);
     }
 }
-```
 
+// Executa a função principal
+executarExemplo();
+
+```
 ### Deploy de Aplicações
 - Criar uma instância de **Continuous Delivery**
 - Criar uma **Toolchain (Cadeia de Ferramentas)**
-- Hierarquia **Tekton**
+- Hierarquia **Tekton** (para maiores informações clique [aqui](https://tekton.dev/))
     - EventListener -> TriggerBinding -> TriggerTemplate -> Pipeline -> Task
 - Criar uma instância de serviço (por exemplo, **continuous-delivery**) chamada **cicd** com plano **lite** na região **br-sao**
 ```bash
@@ -1212,6 +870,7 @@ ibmcloud cr images
 ```bash
 ibmcloud cr namespace-rm meu-namespace -f
 ```
+- Um exemplo de projeto **tekton** pode ser visto [aqui](https://github.com/esensato/teste-tekton)
 - Depois de criar o **toolchain** e publicar a imagem com o **tekton**
 ```bash
 ibmcloud cr login --client docker
