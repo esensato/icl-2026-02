@@ -1,0 +1,110 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Cloudant Alunos API",
+        "description": "API para consulta de documentos na base alunos do IBM Cloudant",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://3c51c00f-a182-4757-ae9e-e992e1471474-bluemix.cloudantnosqldb.appdomain.cloud/"
+        }
+    ],
+    "paths": {
+        "/alunos/{id}": {
+            "get": {
+                "summary": "Buscar aluno por ID",
+                "description": "Retorna um documento da base alunos a partir do _id.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identificador do aluno",
+                        "schema": {
+                            "type": "string",
+                            "example": "RM1002"
+                        }
+                    },
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true,
+                        "description": "Token de acesso no formato Bearer. Exemplo: Bearer eyJraWQiOiJ...",
+                        "schema": {
+                            "type": "string",
+                            "example": "Bearer eyJraWQiOiJ..."
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documento encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Aluno"
+                                },
+                                "example": {
+                                    "_id": "RM1002",
+                                    "_rev": "1-72a7a608d652b72e7453651f61052e06",
+                                    "nome": "Mariana Alves",
+                                    "curso": "Ciência da Computação",
+                                    "creditos": 75
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Documento não encontrado"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Aluno": {
+                "type": "object",
+                "description": "Documento de um aluno armazenado no IBM Cloudant",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "description": "Identificador único do documento no Cloudant",
+                        "example": "RM1002"
+                    },
+                    "_rev": {
+                        "type": "string",
+                        "description": "Identificador da revisão do documento no Cloudant",
+                        "example": "1-72a7a608d652b72e7453651f61052e06"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome completo do aluno",
+                        "example": "Mariana Alves"
+                    },
+                    "curso": {
+                        "type": "string",
+                        "description": "Curso do aluno",
+                        "example": "Ciência da Computação"
+                    },
+                    "creditos": {
+                        "type": "integer",
+                        "description": "Quantidade de créditos obtidos",
+                        "example": 75
+                    }
+                },
+                "required": [
+                    "_id",
+                    "_rev",
+                    "nome",
+                    "curso",
+                    "creditos"
+                ]
+            }
+        }
+    }
+}

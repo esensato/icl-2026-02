@@ -1,0 +1,52 @@
+{
+    "generic": [
+        {
+            "values": [
+                {
+                    "text_expression": {
+                        "concat": [
+                            {
+                                "scalar": "Pois não  "
+                            },
+                            {
+                                "variable": "step_851_result_1",
+                                "variable_path": "body.nome"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "response_type": "table",
+            "title": "Dados do aluno",
+            "headers": [
+                "ID",
+                "Nome",
+                "Curso",
+                "Créditos"
+            ],
+            "rows": [
+                {
+                    "cells": [
+                        {
+                            "variable": "step_851_result_1",
+                            "variable_path": "body._id"
+                        },
+                        {
+                            "variable": "step_851_result_1",
+                            "variable_path": "body.nome"
+                        },
+                        {
+                            "variable": "step_851_result_1",
+                            "variable_path": "body.curso"
+                        },
+                        {
+                            "variable": "step_851_result_1",
+                            "variable_path": "body.creditos"
+                        }
+                    ]
+                }
+            ],
+            "selection_policy": "sequential"
+        }
+    ]
+}
