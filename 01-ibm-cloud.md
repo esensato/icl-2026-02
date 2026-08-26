@@ -538,6 +538,7 @@ main();
 <img src="img/img6.png" style="width:100%; height:auto;">
 </div>
 
+- Um exemplo de tabela pode ser visto [aqui](https://github.com/esensato/icl-2026-02/blob/main/assistant-tabela.json)
 #### Exercícios
 - Implementar novos diálogos:
     - Permitir que o aluno consulte os seus créditos
