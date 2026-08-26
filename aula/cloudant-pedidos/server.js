@@ -18,4 +18,33 @@ const obterPedido = async () => {
     console.log(response.result);
 }
 
-obterPedido();
+
+const criarDB = async () => {
+
+    const response = await cloudant.putDatabase({
+        db: "alunos",
+        partitioned: false
+    });
+
+    console.log(response.result);
+}
+
+const criarDoc = async () => {
+
+    const aluno = {
+        _id: "RM1111",
+        nome: "Cecilia Busch Feiosa",
+        curso: "Ciência da Computação",
+        creditos: 10
+    };
+
+    const response = await cloudant.postDocument({
+        db: "alunos",
+        document: aluno
+    });
+
+    console.log(response.result);
+}
+//obterPedido();
+//criarDB();
+criarDoc();

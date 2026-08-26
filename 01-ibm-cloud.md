@@ -569,33 +569,12 @@ docker pull IMAGEM...
 docker run -it ...
 ```
 
-### Deploy de Aplicações
-- Criar uma instância de **Continuous Delivery**
-- Criar uma **Toolchain (Cadeia de Ferramentas)**
-- Hierarquia **Tekton**
-    - EventListener -> TriggerBinding -> TriggerTemplate -> Pipeline -> Task
 ### Watson Assistant
 - Permite a criação de **chatbots**
 - Efetuar login na [IBM Cloud](https://cloud.ibm.com)
 - Instanciar o serviço [Watson Assistant](https://cloud.ibm.com/catalog/services/watsonx-assistant)
-- Considerar o seguinte caso de uso:
-    - Crie um assistente que auxilie alunos a faculdade "Belo Diploma" a prestar informações de forma automatizada ao seu público alvo, constituído por:
-        - Alunos: uso do assistente para tarefas mais objetivas como verificar disciplicas matriculadas, notas, créditos concluídos, etc...
-        - Ex-alunos: interessados em saber quais são as novidades da faculdade, suas linhas de pesquisa para eventuais cursos de extensão
-        - Interessados nos cursos: alunos em potencial que desejam maiores detalhes sobre a instituição e seus cursos 
-    - O assistente deve prever integração com o sistema *back-end* da universidade para prestar as informações solicitadas (quando aplicado)
-- Criar o diálogo introdutório, o `On boarding`
-    - Actions -> Set by assistant -> Greet customer
-- Adicionar 3 variações de resposta para quando a pergunta não for compreendida pelo Chatbot (escolhidas aleatoriamente)
-    - Actions -> Set by assistant -> No matches
-- Criar uma ação personalizada para saber o nome do aluno
-- Criar variáveis de sessão:
 
-<div style="width:50px">
-<img src="img/img2.png" style="width:100%; height:auto;">
-</div>
-
-#### Integração com o sistema da universidade
+#### Integração com outros sistemas
 - Realizar a integração com a base de dados **Cloudant**
   
 <div style="width:50px;">
@@ -611,70 +590,125 @@ docker run -it ...
 - Formato [OpenAPI](https://editor.swagger.io/) 
 ```json
 {
-  "openapi": "3.0.3",
-  "info": {
-    "title": "Cloudant Alunos API",
-    "description": "API para consulta de documentos na base alunos do IBM Cloudant",
-    "version": "1.0.0"
-  },
-  "servers": [
-    {
-      "url": "https://~replace-with-cloudant-host~.cloudantnosqldb.appdomain.cloud"
-    }
-  ],
-  "paths": {
-    "/alunos/_id:{id}": {
-      "get": {
-        "summary": "Buscar aluno por ID",
-        "description": "Retorna um documento da base alunos a partir do _id.",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "description": "Identificador do aluno",
-            "schema": {
-              "type": "string",
-              "example": "1000042"
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Cloudant Alunos API",
+        "description": "API para consulta de documentos na base alunos do IBM Cloudant",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://sua-url-bluemix.cloudantnosqldb.appdomain.cloud/"
+        }
+    ],
+    "paths": {
+        "/alunos/{id}": {
+            "get": {
+                "summary": "Buscar aluno por ID",
+                "description": "Retorna um documento da base alunos a partir do _id.",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identificador do aluno",
+                        "schema": {
+                            "type": "string",
+                            "example": "RM1002"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documento encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Aluno"
+                                },
+                                "example": {
+                                    "_id": "RM1002",
+                                    "_rev": "1-72a7a608d652b72e7453651f61052e06",
+                                    "nome": "Mariana Alves",
+                                    "curso": "Ciência da Computação",
+                                    "creditos": 75
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Documento não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Documento encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true
+        }
+    },
+    "components": {
+        "schemas": {
+            "Aluno": {
+                "type": "object",
+                "description": "Documento de um aluno armazenado no IBM Cloudant",
+                "properties": {
+                    "_id": {
+                        "type": "string",
+                        "description": "Identificador único do documento no Cloudant",
+                        "example": "RM1002"
+                    },
+                    "_rev": {
+                        "type": "string",
+                        "description": "Identificador da revisão atual do documento no Cloudant",
+                        "example": "1-72a7a608d652b72e7453651f61052e06"
+                    },
+                    "nome": {
+                        "type": "string",
+                        "description": "Nome completo do aluno",
+                        "example": "Mariana Alves"
+                    },
+                    "curso": {
+                        "type": "string",
+                        "description": "Curso em que o aluno está matriculado",
+                        "example": "Ciência da Computação"
+                    },
+                    "creditos": {
+                        "type": "integer",
+                        "description": "Quantidade de créditos obtidos pelo aluno",
+                        "example": 75
+                    }
+                },
+                "required": [
+                    "_id",
+                    "_rev",
+                    "nome",
+                    "curso",
+                    "creditos"
+                ]
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Mensagem de erro"
+                    }
                 }
-              }
             }
-          },
-          "401": {
-            "description": "Não autorizado"
-          },
-          "404": {
-            "description": "Documento não encontrado"
-          }
         },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
     }
-  },
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
-    }
-  }
 }
 ```
 #### Exercícios
@@ -682,50 +716,25 @@ docker run -it ...
     - Permitir que o aluno consulte os seus créditos
     - Permitir que o aluno deixe algum recado escrito (dúvidas, críticas, elogios, sugestões, etc...) para a secretaria
 
-### Personalizando o chatbot
-- Instalar em uma página HTML
-
-    [Instalar Assistente](https://developer.ibm.com/tutorials/embed-watson-assistant-in-website/)
-
-- Código inicial para exibir o chatbot em um site
-    ```javascript
-    <script>
-      window.watsonAssistantChatOptions = {
-        // A UUID like '1d7e34d5-3952-4b86-90eb-7c7232b9b540' included in the embed code provided in IBM watsonx Assistant.
-        integrationID: 'YOUR_INTEGRATION_ID',
-        // Your assistants region e.g. 'us-south', 'us-east', 'jp-tok' 'au-syd', 'eu-gb', 'eu-de', etc.
-        region: 'YOUR_REGION',
-        // A UUID like '6435434b-b3e1-4f70-8eff-7149d43d938b' included in the embed code provided in IBM watsonx Assistant.
-        serviceInstanceID: 'YOUR_SERVICE_INSTANCE_ID',
-        // The callback function that is called after the widget instance has been created.
-        onLoad: async (instance) => {
-          await instance.render();
-        }
-      };
-      setTimeout(function(){const t=document.createElement('script');t.src='https://web-chat.global.assistant.watson.appdomain.cloud/versions/' + (window.watsonAssistantChatOptions.clientVersion || 'latest') + '/WatsonAssistantChatEntry.js';document.head.appendChild(t);});
-    </script>
-    ```
-- Para obter um exemplo, clicar em
-    <div style="width:100px; height:100px">
-    <img src="img/img1.png">
-    </div>
-
-- E em seguida, clicar na aba superior **Embed**
-- `onLoad` executado quando o chatbot é carregado
-- Configurações de *layout*
-    ```json
-        layout: {
-            showFrame: true,
-            hasContentMaxWidth: false,
-        }
-    ```
+### Chatbot Embedded
+- Existem várias customizações para o **chatbot** que podem ser obtidas [aqui](https://web-chat.global.assistant.watson.cloud.ibm.com/docs.html)
+- Para incluir o **chatbot** em uma página HTML, no **Assistant**:
+    - Menu laterial esquerdo -> Environments -> Channels -> Web chat -> Embed
+- Função `onLoad` executado quando o **chatbot** é carregado
+- Configurações de *layout* podem ser incluídas dentro de `window.watsonAssistantChatOptions`
+```json
+    layout: {
+        showFrame: true,
+        hasContentMaxWidth: false,
+    }
+```
 - Configurações do tema
-    ```json
-        themeConfig: {
-            carbonTheme: 'g100',
-            corners: 'round',
-        }
-    ```
+```json
+    themeConfig: {
+        carbonTheme: 'g100',
+        corners: 'round',
+    }
+```
 - Obs: `carbonTheme` podem ser "white", "g10", "g90" ou "g100" e `corner` "square" ou "round"
 - Botão para fechar o chatbot
     ```json
@@ -736,13 +745,13 @@ docker run -it ...
 - Obs: opções "minimize", "close", "side-panel-left" e "side-panel-right".
 #### Eventos
 - Lista de eventos completa pode ser encontrada [Aqui](https://web-chat.global.assistant.watson.cloud.ibm.com/docs.html?to=api-events#event-list)
-    ```javascript
-        instance.on({
-            type: 'receive', handler: (event) => { console.log('I received a message!', event); }
-        });
-    ```
+```javascript
+    instance.on({
+        type: 'receive', handler: (event) => { console.log('I received a message!', event); }
+    });
+```
 - Evento `receive`: executado quando uma mensagem é recebida;
-- - Os principais parâmetros recebidos pelas funçõs na varável `event` são:
+- Os principais parâmetros recebidos pelas funçõs na varável `event` são:
     - `event.data`: mensagem (dados) recebidos pelo chatbot como respostas das intenções do usuário;
     - `event.data.output.generic`: itens da resposta recebidos (texto, etc...)
 - Evento `pre:receive`: executado antes do `receive`;
@@ -786,6 +795,130 @@ docker run -it ...
 
         }
     ```
+### IBM Cloud Object Storage
+- Descrever o serviço
+```bash
+ibmcloud catalog service cloud-object-storage
+```
+- Instanciar o serviço
+```bash
+ibmcloud resource service-instance-create meu-object-storage cloud-object-storage lite global
+ibmcloud resource service-instance meu-object-storage
+```
+- Instalar o *plug-in*
+```bash
+ibmcloud plugin install cloud-object-storage
+```
+- Definir o crn e listar os *buckets*
+```bash
+./ibmcloud cos config crn --crn ID_CRN
+./ibmcloud cos buckets
+```
+- Criar um `bucket`
+```bash
+ibmcloud cos bucket-create --bucket aluno01-ibmcloud-lab --region br-sao
+```
+- Efetuando *upload*
+```bash
+echo "Olá IBM Cloud" > mensagem.txt
+ibmcloud cos object-put --bucket aluno01-ibmcloud-lab --key mensagem.txt --body mensagem.txt
+```
+- Listando os arquivos
+```bash
+ibmcloud cos objects --bucket aluno01-ibmcloud-lab
+```
+- Efetuando o `download`
+```bash
+ibmcloud cos object-get --bucket aluno01-ibmcloud-lab --key mensagem.txt mensagem-download.txt
+```
+- Criando uma aplicação para *upload* e *download* de arquivos
+```bash
+npm init -y
+npm install ibm-cos-sdk-v2 dotenv
+```
+- Criar o arquivo `.env`
+```javascript
+IBM_COS_API_KEY=SUA_API_KEY
+IBM_COS_INSTANCE_ID=SEU_SERVICE_INSTANCE_ID
+IBM_COS_ENDPOINT=https://s3.us-south.cloud-object-storage.appdomain.cloud
+IBM_COS_REGION=us-south
+IBM_COS_BUCKET=aluno01-ibmcloud-lab
+```
+- Criar uma pasta `downloads` para gravar os arquivos obtidos do **COS**
+- Código para *upload* e *download*
+```javascript
+require("dotenv").config();
+
+const fs = require("fs");
+const {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand
+} = require("ibm-cos-sdk-v2");
+
+const client = new S3Client({
+  endpoint: process.env.IBM_COS_ENDPOINT,
+  region: process.env.IBM_COS_REGION,
+  credentials: {
+    apiKey: process.env.IBM_COS_API_KEY,
+    serviceInstanceId: process.env.IBM_COS_INSTANCE_ID
+  }
+});
+
+const bucket = process.env.IBM_COS_BUCKET;
+
+async function upload() {
+  const fileName = "upload.txt";
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: fileName,
+    Body: fs.createReadStream(fileName)
+  });
+
+  const response = await client.send(command);
+
+  console.log("Upload realizado!");
+  console.log("ETag:", response.ETag);
+}
+
+async function download() {
+  const key = "upload.txt";
+  const outputFile = "downloads/download.txt";
+
+  fs.mkdirSync("downloads", { recursive: true });
+
+  const command = new GetObjectCommand({
+    Bucket: bucket,
+    Key: key
+  });
+
+  const response = await client.send(command);
+
+  const file = fs.createWriteStream(outputFile);
+
+  for await (const chunk of response.Body) {
+    file.write(chunk);
+  }
+
+  file.end();
+
+  console.log(`Download realizado: ${outputFile}`);
+}
+
+async function main() {
+  try {
+    await upload();
+    await download();
+  } catch (error) {
+    console.error("Erro:", error);
+  }
+}
+
+main();
+```
+- Criar um arquivo de testes `upload.txt`
+
 ### Conectar DB2
 - Para referência à API clicar [aqui](https://cloud.ibm.com/apidocs/db2-on-cloud/db2-on-cloud-v4)
 - Definir as variáveis para a obter o token de conexão
@@ -1204,3 +1337,9 @@ print(data.decode("utf-8"))
     }
 }
 ```
+
+### Deploy de Aplicações
+- Criar uma instância de **Continuous Delivery**
+- Criar uma **Toolchain (Cadeia de Ferramentas)**
+- Hierarquia **Tekton**
+    - EventListener -> TriggerBinding -> TriggerTemplate -> Pipeline -> Task
