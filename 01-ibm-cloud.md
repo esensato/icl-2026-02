@@ -532,13 +532,16 @@ main();
 - Um exemplo para obter o *token* de acesso ao **Cloudant** pode ser conferido [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-token.json)
 - Com o *token* uma outra integração pode ser definda para retornar os dados de um aluno por meio de seu **RM**, por exemplo, [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-alunos.json)
 #### Personalizando Diálogos
-- Os diálogos podem também ser personalizados para exibir tabelas, listas, etc...
+- Os diálogos podem também ser personalizados (**Switch to JSON editor**) para exibir tabelas, listas, etc...
 
 <div style="width:100px; height:100px">
 <img src="img/img6.png" style="width:100%; height:auto;">
 </div>
 
 - Um exemplo de tabela pode ser visto [aqui](https://github.com/esensato/icl-2026-02/blob/main/assistant-tabela.json)
+- Outro exemplo, para incluir um botão pode ser visto [aqui](https://github.com/esensato/icl-2026-02/blob/main/assistant-botao.json)
+- Para demais tipos de respostas conferir [aqui](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-response-types-reference)
+- Um tutorial para realizar *upload* de arquivos pelo **watsonx assistant* pode ser visto [aqui](https://developer.ibm.com/tutorials/awb-watsonx-assistant-upload-a-file-from-the-web-chat-interface/)
 #### Exercícios
 - Implementar novos diálogos:
     - Permitir que o aluno consulte os seus créditos
@@ -550,14 +553,14 @@ main();
     - Menu laterial esquerdo -> Environments -> Channels -> Web chat -> Embed
 - Função `onLoad` executado quando o **chatbot** é carregado
 - Configurações de *layout* podem ser incluídas dentro de `window.watsonAssistantChatOptions`
-```json
+```javascript
     layout: {
         showFrame: true,
         hasContentMaxWidth: false,
     }
 ```
 - Configurações do tema
-```json
+```javascript
     themeConfig: {
         carbonTheme: 'g100',
         corners: 'round',
@@ -565,64 +568,51 @@ main();
 ```
 - Obs: `carbonTheme` podem ser "white", "g10", "g90" ou "g100" e `corner` "square" ou "round"
 - Botão para fechar o chatbot
-    ```json
-        headerConfig: {
-            closeButtonIconType: 'side-panel-left',
-        }
-    ```
+```javascript
+    headerConfig: {
+        closeButtonIconType: 'side-panel-left',
+    }
+```
 - Obs: opções "minimize", "close", "side-panel-left" e "side-panel-right".
 #### Eventos
-- Lista de eventos completa pode ser encontrada [Aqui](https://web-chat.global.assistant.watson.cloud.ibm.com/docs.html?to=api-events#event-list)
+- Lista de eventos completa pode ser encontrada [aqui](https://web-chat.global.assistant.watson.cloud.ibm.com/docs.html?to=api-events#event-list)
+- Exemplo para identificar um evento e acionar um *endpoint* local
 ```javascript
-    instance.on({
-        type: 'receive', handler: (event) => { console.log('I received a message!', event); }
-    });
-```
-- Evento `receive`: executado quando uma mensagem é recebida;
-- Os principais parâmetros recebidos pelas funçõs na varável `event` são:
-    - `event.data`: mensagem (dados) recebidos pelo chatbot como respostas das intenções do usuário;
-    - `event.data.output.generic`: itens da resposta recebidos (texto, etc...)
-- Evento `pre:receive`: executado antes do `receive`;
-    ```javascript
-        instance.on({
-            type: 'pre:receive', handler: (event) => {
-                console.log('pre:receive')
-                const message = event.data;
-                if (message.output.generic) {
-                    message.output.generic.forEach(messageItem => {
-                        console.log(messageItem);
-                        if (messageItem.response_type === 'text') {
-                            messageItem.response_type = 'teste123';
-                        }
-                    })
-                }
+instance.on({
+    type: "messageItemCustom",
+
+    handler: async (event) => {
+
+        console.log("Evento:", event);
+
+        if (
+            event.customEventType ===
+            "buttonItemClicked"
+        ) {
+
+            if (
+                event.messageItem.custom_event_name ===
+                "finalizar_pedido"
+            ) {
+
+                console.log(
+                    "Usuário clicou em finalizar!"
+                );
+
+                const response =
+                    await fetch("/teste", {
+                        method: "POST"
+                    });
+
+                const resultado =
+                    await response.json();
+
+                console.log(resultado);
             }
-        });
-    ```
-
-- Evento `customResponse`: permite criar uma resposta personalizada;
-    ```javascript
-        function customResponseHandler(event) {
-            const { message, element, fullMessage } = event.data;
-
-            const div = document.createElement('div');
-            // obtem o texto da mensagem
-            div.innerHTML = message.text;
-            div.style.border = 'solid 1px';
-            div.style.color = 'red';
-
-            // message.options.forEach((messageItem, index) => {
-            //     const button = document.createElement('button');
-            //     button.innerHTML = messageItem.label;
-            //     button.classList.add('CardButton');
-            //     button.addEventListener('click', () => onClick(messageItem, button, fullMessage, index));
-            //     element.appendChild(button);
-            // });
-
-            element.appendChild(div);
-
         }
-    ```
+    }
+});
+```
 ### Ferramenta CLI (ibmcloud)
 - Efetuar o download e instalação [ibmcloud](https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli)
 - Para testar e listar os *plug-ins*

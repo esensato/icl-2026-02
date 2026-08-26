@@ -1,0 +1,14 @@
+{
+    "generic": [
+        {
+            "label": "Pode finalizar?",
+            "button_type": "custom_event",
+            "user_defined": {
+                "rm": "$rm",
+                "acao": "finalizar"
+            },
+            "response_type": "button",
+            "custom_event_name": "finalizar_pedido"
+        }
+    ]
+}
