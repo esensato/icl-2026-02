@@ -510,65 +510,6 @@ main();
 - A atualização e exclusão de documentos exigem informar o campo **_rev**, que representa a revisão atual do documento.
 - Os documentos são armazenados em formato **JSON**, característica típica dos bancos NoSQL orientados a documentos como o Cloudant e o CouchDB.
 
-### Ferramenta CLI (ibmcloud)
-- Efetuar o download e instalação [ibmcloud](https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli)
-- Para testar e listar os *plug-ins*
-```bash
-ibmcloud --version
-ibmcloud plugin list
-```
-- Verificar a chave de API `https://cloud.ibm.com/iam/apikeys`
-- Efetuar o login na **IBM Cloud**, listar os grupos de recursos e selecionar um grupo (*Default*)
-```bash
-ibmcloud login --apikey IBMCLOUD_API_KEY
-ibmcloud resource groups
-ibmcloud target -g 
-```
-- Listar os recursos instanciados
-```bash
-ibmcloud resource service-instances
-```
-- Para remover um recurso
-```bash
-ibmcloud resource service-instance-delete NOME_OU_ID
-```
-- Criar uma instância de serviço (por exemplo, **continuous-delivery**) chamada **cicd** com plano **lite** na região **br-sao**
-```ba
-ibmcloud resource service-instance-create cicd continuous-delivery lite br-sao
-```
-- Definindo a região atual
-```bash
-ibmcloud target -r br-sao
-```
-- Visualizando a cadeia de ferramentas
-```bash
-ibmcloud dev toolchains
-```
-### Container Registry
-```bash
-ibmcloud plugin install container-registry
-
-ibmcloud cr region-set br-sao
-
-ibmcloud cr namespace-list
-
-ibmcloud cr namespace-add meu-namespace
-
-ibmcloud cr images
-```
-- Para remover um **namespace**
-```bash
-ibmcloud cr namespace-rm meu-namespace -f
-```
-- Depois de criar o **toolchain** e publicar a imagem com o **tekton**
-```bash
-ibmcloud cr login --client docker
-
-docker pull IMAGEM...
-
-docker run -it ...
-```
-
 ### Watson Assistant
 - Permite a criação de **chatbots**
 - Efetuar login na [IBM Cloud](https://cloud.ibm.com)
@@ -795,6 +736,29 @@ docker run -it ...
 
         }
     ```
+### Ferramenta CLI (ibmcloud)
+- Efetuar o download e instalação [ibmcloud](https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli)
+- Para testar e listar os *plug-ins*
+```bash
+ibmcloud --version
+ibmcloud plugin list
+```
+- Verificar a chave de API `https://cloud.ibm.com/iam/apikeys`
+- Efetuar o login na **IBM Cloud**, listar os grupos de recursos e selecionar um grupo (*Default*)
+```bash
+ibmcloud login --apikey IBMCLOUD_API_KEY
+ibmcloud resource groups
+ibmcloud target -g 
+```
+- Listar os recursos instanciados
+```bash
+ibmcloud resource service-instances
+```
+- Para remover um recurso
+```bash
+ibmcloud resource service-instance-delete NOME_OU_ID
+```
+
 ### IBM Cloud Object Storage
 - Descrever o serviço
 ```bash
@@ -1343,3 +1307,39 @@ print(data.decode("utf-8"))
 - Criar uma **Toolchain (Cadeia de Ferramentas)**
 - Hierarquia **Tekton**
     - EventListener -> TriggerBinding -> TriggerTemplate -> Pipeline -> Task
+- Criar uma instância de serviço (por exemplo, **continuous-delivery**) chamada **cicd** com plano **lite** na região **br-sao**
+```bash
+ibmcloud resource service-instance-create cicd continuous-delivery lite br-sao
+```
+- Definindo a região atual
+```bash
+ibmcloud target -r br-sao
+```
+- Visualizando a cadeia de ferramentas
+```bash
+ibmcloud dev toolchains
+```
+### Container Registry
+```bash
+ibmcloud plugin install container-registry
+
+ibmcloud cr region-set br-sao
+
+ibmcloud cr namespace-list
+
+ibmcloud cr namespace-add meu-namespace
+
+ibmcloud cr images
+```
+- Para remover um **namespace**
+```bash
+ibmcloud cr namespace-rm meu-namespace -f
+```
+- Depois de criar o **toolchain** e publicar a imagem com o **tekton**
+```bash
+ibmcloud cr login --client docker
+
+docker pull IMAGEM...
+
+docker run -it ...
+```
