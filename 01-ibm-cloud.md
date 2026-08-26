@@ -529,7 +529,15 @@ main();
 </div>
 
 - As definições para as integrações devem seguir o formato [OpenAPI](https://editor.swagger.io/)
-- Um exemplo para obter o *toen* de acesso ao **Cloudant** pode ser conferido [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-token.json)
+- Um exemplo para obter o *token* de acesso ao **Cloudant** pode ser conferido [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-token.json)
+- Com o *token* uma outra integração pode ser definda para retornar os dados de um aluno por meio de seu **RM**, por exemplo, [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-alunos.json)
+#### Personalizando Diálogos
+- Os diálogos podem também ser personalizados para exibir tabelas, listas, etc...
+
+<div style="width:100px; height:100px">
+<img src="img/img6.png" style="width:100%; height:auto;">
+</div>
+
 #### Exercícios
 - Implementar novos diálogos:
     - Permitir que o aluno consulte os seus créditos
