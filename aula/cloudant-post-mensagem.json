@@ -1,0 +1,128 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Mensagens API",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://{cloudant-host}.cloudantnosqldb.appdomain.cloud",
+            "variables": {
+                "cloudant-host": {
+                    "default": "replace-with-cloudant-host"
+                }
+            }
+        }
+    ],
+    "paths": {
+        "/mensagens": {
+            "post": {
+                "summary": "Cria uma mensagem",
+                "operationId": "createMensagem",
+                "parameters": [
+                    {
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true,
+                        "description": "Token de acesso no formato Bearer. Exemplo: Bearer eyJraWQiOiJ...",
+                        "schema": {
+                            "type": "string",
+                            "example": "Bearer eyJraWQiOiJ..."
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Mensagem"
+                            },
+                            "example": {
+                                "mensagem": "Olá, esta é uma mensagem de teste.",
+                                "data": "2026-08-26T20:22:00-03:00"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Mensagem criada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MensagemResponse"
+                                },
+                                "example": {
+                                    "id": "exampleid",
+                                    "ok": true,
+                                    "rev": "2-056f5f44046ecafc08a2bc2b9c229e20"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição inválida"
+                    },
+                    "401": {
+                        "description": "Token de autenticação inválido ou ausente"
+                    },
+                    "500": {
+                        "description": "Erro interno"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Mensagem": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "mensagem",
+                    "data"
+                ],
+                "properties": {
+                    "mensagem": {
+                        "type": "string",
+                        "description": "Conteúdo da mensagem",
+                        "example": "Olá, esta é uma mensagem de teste."
+                    },
+                    "data": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Data e hora da mensagem no formato ISO 8601",
+                        "example": "2026-08-26T20:22:00-03:00"
+                    }
+                }
+            },
+            "MensagemResponse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "ok",
+                    "rev"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": "Identificador da mensagem criada",
+                        "example": "exampleid"
+                    },
+                    "ok": {
+                        "type": "boolean",
+                        "description": "Indica se a operação foi realizada com sucesso",
+                        "example": true
+                    },
+                    "rev": {
+                        "type": "string",
+                        "description": "Identificador da revisão do documento",
+                        "example": "2-056f5f44046ecafc08a2bc2b9c229e20"
+                    }
+                }
+            }
+        }
+    }
+}

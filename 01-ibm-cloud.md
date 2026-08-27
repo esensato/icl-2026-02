@@ -584,28 +584,16 @@ instance.on({
     handler: async (event) => {
 
         console.log("Evento:", event);
+        console.log(event.fullMessage.context.skills['actions skill'].skill_variables);
 
-        if (
-            event.customEventType ===
-            "buttonItemClicked"
-        ) {
+        if (event.customEventType === "buttonItemClicked" ) {
 
-            if (
-                event.messageItem.custom_event_name ===
-                "finalizar_pedido"
-            ) {
+            if (event.messageItem.custom_event_name === "finalizar_pedido") {
 
-                console.log(
-                    "Usuário clicou em finalizar!"
-                );
+                console.log("Usuário clicou em finalizar!");
 
-                const response =
-                    await fetch("/teste", {
-                        method: "POST"
-                    });
-
-                const resultado =
-                    await response.json();
+                const response = await fetch("/teste", {method: "POST"});
+                const resultado = await response.json();
 
                 console.log(resultado);
             }

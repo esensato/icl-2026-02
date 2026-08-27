@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "https://3c51c00f-a182-4757-ae9e-e992e1471474-bluemix.cloudantnosqldb.appdomain.cloud/"
+            "url": "https://{cloudant-host}.cloudantnosqldb.appdomain.cloud/"
         }
     ],
     "paths": {
