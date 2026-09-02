@@ -603,6 +603,7 @@ instance.on({
 ```
 ### Ferramenta CLI (ibmcloud)
 - Efetuar o download e instalação [ibmcloud](https://cloud.ibm.com/docs/cli?topic=cli-install-ibmcloud-cli)
+    - [Windows](https://download.clis.cloud.ibm.com/ibm-cloud-cli-dn/2.47.0/binaries/IBM_Cloud_CLI_2.47.0_windows_amd64.zip)
 - Para testar e listar os *plug-ins*
 ```bash
 ibmcloud --version

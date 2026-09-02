@@ -510,9 +510,27 @@
 
             instance.on({
                 type: "messageItemCustom",
+
                 handler: async (event) => {
 
                     console.log("Evento:", event);
+                    console.log(event.fullMessage.context.skills['actions skill'].skill_variables);
+                    console.log("custom_event_name:", event.messageItem.custom_event_name);
+
+                    if (event.customEventType === "buttonItemClicked") {
+                        // requisição POST local quando o usuário clica no botão no chatbot
+                        const response = await fetch("/teste", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json", // Inform the server about the data format
+                            },
+                            body: JSON.stringify(event.fullMessage.context.skills['actions skill'].skill_variables)
+                        });
+
+                        const resultado = await response.json();
+
+                        console.log(resultado);
+                    }
                 }
             });
 
