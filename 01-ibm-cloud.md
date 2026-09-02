@@ -614,7 +614,7 @@ ibmcloud plugin list
 ```bash
 ibmcloud login --apikey IBMCLOUD_API_KEY
 ibmcloud resource groups
-ibmcloud target -g 
+ibmcloud target -g Default
 ```
 - Listar os recursos instanciados
 ```bash
