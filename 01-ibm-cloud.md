@@ -527,7 +527,10 @@ main();
 <div style="width:100px; height:100px">
 <img src="img/img4.png" style="width:100%; height:auto;">
 </div>
-
+- Tutoriais para criação de integrações:
+    - [Construir uma extensão](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-build-custom-extension)
+    - [Incluir a extensão no assistente](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-add-custom-extension)
+    - [Configurar a extensão - parâmetros](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-stream-from-extension)
 - As definições para as integrações devem seguir o formato [OpenAPI](https://editor.swagger.io/)
 - Um exemplo para obter o *token* de acesso ao **Cloudant** pode ser conferido [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-token.json)
 - Com o *token* uma outra integração pode ser definda para retornar os dados de um aluno por meio de seu **RM**, por exemplo, [aqui](https://github.com/esensato/icl-2026-02/blob/main/cloudant-alunos.json)
