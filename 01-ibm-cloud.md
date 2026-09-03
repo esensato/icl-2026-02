@@ -527,6 +527,7 @@ main();
 <div style="width:100px; height:100px">
 <img src="img/img4.png" style="width:100%; height:auto;">
 </div>
+
 - Tutoriais para criação de integrações:
     - [Construir uma extensão](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-build-custom-extension)
     - [Incluir a extensão no assistente](https://cloud.ibm.com/docs/watson-assistant?topic=watson-assistant-add-custom-extension)
