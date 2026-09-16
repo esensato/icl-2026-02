@@ -522,7 +522,7 @@
                         const response = await fetch("/teste", {
                             method: "POST",
                             headers: {
-                                "Content-Type": "application/json", // Inform the server about the data format
+                                "Content-Type": "application/json"
                             },
                             body: JSON.stringify(event.fullMessage.context.skills['actions skill'].skill_variables)
                         });
