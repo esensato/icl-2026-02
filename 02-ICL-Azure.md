@@ -16,6 +16,8 @@ az provider register --namespace Microsoft.sql
 ### Azure Text Translation
 - Instanciar o serviço
 ```bash
+az provider register --namespace Microsoft.CognitiveServices
+
 az cognitiveservices account create \
   --name meu-translator \
   --resource-group rg-demo \
