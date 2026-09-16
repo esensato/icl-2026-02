@@ -31,7 +31,8 @@ az cognitiveservices account create \
 az cognitiveservices account show \
   --name meu-translator \
   --resource-group rg-demo \
-  -o table
+  --query properties.endpoint \
+  -o tsv
 
 az cognitiveservices account keys list \
   --name meu-translator \
