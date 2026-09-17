@@ -192,13 +192,13 @@ az cognitiveservices account create \
 - Obter o *endpoint* e a chave
 ```bash
 az cognitiveservices account show \
-  --name meu-language-service \
+  --name meu-language \
   --resource-group rg-demo \
   --query properties.endpoint \
   -o tsv
 
 az cognitiveservices account keys list \
-  --name meu-language-service \
+  --name meu-language \
   --resource-group rg-demo
 ```
 - Instalar a biblioteca **nodejs**
