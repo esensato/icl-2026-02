@@ -838,7 +838,7 @@ npm install @azure/functions-extensions-azure-sql
 
 func start
 ```
-#### HTTP Funcions
+#### HTTP Functions
 ```javascript
 const { app } = require('@azure/functions');
 
@@ -1454,3 +1454,165 @@ app.listen(port, () => {
 });
 ```
 - Efetuar o *deploy* da aplicação na **Azure**
+
+### Virtualização
+- Criar uma máquina virtual dentro do modelo **IaS* de um servidor *Windows* com *Internet Information Services* (IIS)
+- Verificar as regiões disponíveis para a conta e os tamanhos de VMs
+```bash
+az account list-locations --query "[].name" -o tsv
+
+az vm list-skus --location <regiao> --resource-type virtualMachines --output table
+
+az vm list-skus --location <regiao> --resource-type virtualMachines --size Standard_E2s_v3 --output json
+```
+- Como serão criados vários recursos, é importante agrupá-los em um *resource group* (`iis_server`)
+```bash
+az group create --name iis_server --location brazilsouth
+```
+- Criar uma rede virtual
+```bash
+az network vnet create \
+  --resource-group iis_server \
+  --name vm-iis \
+  --address-prefix 10.0.0.0/16 \
+  --subnet-name vm-iis-subnet \
+  --subnet-prefix 10.0.1.0/24
+
+az network vnet show \
+  --resource-group iis_server \
+  --name vm-iis \
+  --output table
+
+```
+- Detalhe sobre o CIDR: o que significa /16 e /24
+- /16 = 11111111.11111111.00000000.00000000 = 255.255.0.0
+- /24 = 11111111.11111111.11111111.00000000 = 255.255.255.0
+- Criar o *security group*
+```bash
+az network nsg create \
+  --resource-group iis_server \
+  --name nsg-iis
+```
+- Liberar **HTTP*
+```bash
+az network nsg rule create \
+  --resource-group iis_server \
+  --nsg-name nsg-iis \
+  --name Allow-HTTP \
+  --priority 1000 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --destination-port-ranges 80
+```
+- Liberar o **Remote Desktop**
+```bash
+az network nsg rule create \
+  --resource-group iis_server \
+  --nsg-name nsg-iis \
+  --name Allow-RDP \
+  --priority 1100 \
+  --direction Inbound \
+  --access Allow \
+  --protocol Tcp \
+  --destination-port-ranges 3389
+```
+- Mostrar as regras atualizadas
+```bash
+az network nsg rule list \
+  --resource-group iis_server \
+  --nsg-name nsg-iis \
+  --output table
+```
+- Criar o IP público
+```bash
+az network public-ip create \
+  --resource-group iis_server \
+  --name pip-iis \
+  --sku Standard \
+  --allocation-method Static
+
+az network public-ip show \
+  --resource-group iis_server \
+  --name pip-iis \
+  --query ipAddress \
+  --output tsv
+```
+- Criar a VM (será solicitado uma senha para a VM - utilizar VMT&ste!1234)
+```bash
+az vm create \
+  --resource-group iis_server \
+  --name iis-vm-1 \
+  --location brazilsouth \
+  --zone 1 \
+  --size Standard_E2s_v3 \
+  --image MicrosoftWindowsServer:WindowsServer:2025-datacenter-g2:latest \
+  --admin-username azureuser \
+  --security-type TrustedLaunch \
+  --enable-secure-boot true \
+  --enable-vtpm true \
+  --storage-sku Premium_LRS \
+  --os-disk-size-gb 127 \
+  --vnet-name vm-iis \
+  --subnet vm-iis-subnet \
+  --public-ip-address pip-iis \
+  --nic-delete-option delete \
+  --os-disk-delete-option delete
+```
+- Instalar o IIS
+```bash
+az vm extension set \
+  --resource-group iis_server \
+  --vm-name iis-vm-1 \
+  --name CustomScriptExtension \
+  --publisher Microsoft.Compute \
+  --version 1.10 \
+  --settings '{"commandToExecute":"powershell -ExecutionPolicy Bypass -Command \"Install-WindowsFeature -Name Web-Server -IncludeManagementTools\""}'
+
+az vm extension list \
+  --resource-group $RESOURCE_GROUP \
+  --vm-name $VM_NAME \
+  --output table
+
+```
+- Criar uma página html
+```bash
+az vm extension set \
+  --resource-group iis_server \
+  --vm-name $VM_NAME \
+  --name CustomScriptExtension \
+  --publisher Microsoft.Compute \
+  --version 1.10 \
+  --settings '{"commandToExecute":"powershell -ExecutionPolicy Bypass -Command \"Set-Content -Path C:\\inetpub\\wwwroot\\index.html -Value ''<html><head><title>Azure IaaS Lab</title></head><body><h1>Servidor IIS no Azure</h1><p>Esta página está sendo servida por uma VM Windows Server.</p><p>Laboratório de IaaS.</p></body></html>''\""}'
+```
+### Balanceamento de Carga
+- Criar um *load balancer*
+```bash
+az network lb create \
+  --resource-group iis_server \
+  --name lb-web \
+  --sku Standard \
+  --public-ip-address pip-lb \
+  --frontend-ip-name frontend \
+  --backend-pool-name backend
+```
+- Criar um novo IP para atender ao *load balancer*
+```bash
+az network public-ip create \
+  --resource-group iis_server \
+  --name pip-lb \
+  --sku Standard \
+  --allocation-method Static
+```
+- Definir um *pool* onde as duas VMs serão associadas
+```bash
+az network nic ip-config address-pool add \
+  --address-pool backend \
+  --ip-config-name ipconfig1 \
+  --nic-name NIC_DA_VM1 \
+  --resource-group iis_server \
+  --lb-name lb-web
+```
+
+
+
