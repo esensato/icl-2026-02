@@ -620,6 +620,8 @@ main().catch(console.error);
 ```
 - Exemplo de aplicação para reconhecer recibos
 ```javascript
+require("dotenv").config();
+
 const express = require("express");
 const multer = require("multer");
 const axios = require("axios");
@@ -630,11 +632,11 @@ const upload = multer({ dest: "uploads/" });
 
 const PORT = process.env.PORT || 3000;
 
-const AZURE_KEY = "SUA_CHAVE";
-const AZURE_ENDPOINT = "SEU_ENDPOINT"; 
+const endpoint = process.env.DOCUMENT_INTELLIGENCE_ENDPOINT;
+const key = process.env.DOCUMENT_INTELLIGENCE_KEY;
 
 app.get("/", (req, res) => {
-  res.send(`
+    res.send(`
     <h2>Upload de documento (PDF/Imagem)</h2>
     <form method="POST" action="/analyze" enctype="multipart/form-data">
       <input type="file" name="file"/>
@@ -645,54 +647,54 @@ app.get("/", (req, res) => {
 
 // Endpoint principal
 app.post("/analyze", upload.single("file"), async (req, res) => {
-  try {
-    const fileData = fs.readFileSync(req.file.path);
+    try {
+        const fileData = fs.readFileSync(req.file.path);
 
-    const response = await axios.post(
-      `${AZURE_ENDPOINT}/formrecognizer/documentModels/prebuilt-receipt:analyze?api-version=2023-07-31`,
-      fileData,
-      {
-        headers: {
-          "Ocp-Apim-Subscription-Key": AZURE_KEY,
-          "Content-Type": "application/octet-stream"
+        const response = await axios.post(
+            `${endpoint}/formrecognizer/documentModels/prebuilt-receipt:analyze?api-version=2023-07-31`,
+            fileData,
+            {
+                headers: {
+                    "Ocp-Apim-Subscription-Key": key,
+                    "Content-Type": "application/octet-stream"
+                }
+            }
+        );
+
+        const operationLocation = response.headers["operation-location"];
+
+        let result;
+        while (true) {
+            const poll = await axios.get(operationLocation, {
+                headers: {
+                    "Ocp-Apim-Subscription-Key": key
+                }
+            });
+
+            if (poll.data.status === "succeeded") {
+                result = poll.data;
+                break;
+            }
+
+            if (poll.data.status === "failed") {
+                throw new Error("Falha na análise");
+            }
+
+            await new Promise(r => setTimeout(r, 2000));
         }
-      }
-    );
 
-    const operationLocation = response.headers["operation-location"];
+        fs.unlinkSync(req.file.path);
 
-    let result;
-    while (true) {
-      const poll = await axios.get(operationLocation, {
-        headers: {
-          "Ocp-Apim-Subscription-Key": AZURE_KEY
-        }
-      });
+        res.json(result);
 
-      if (poll.data.status === "succeeded") {
-        result = poll.data;
-        break;
-      }
-
-      if (poll.data.status === "failed") {
-        throw new Error("Falha na análise");
-      }
-
-      await new Promise(r => setTimeout(r, 2000));
+    } catch (err) {
+        console.error(err.response?.data || err.message);
+        res.status(500).send("Erro ao analisar documento");
     }
-
-    fs.unlinkSync(req.file.path);
-
-    res.json(result);
-
-  } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).send("Erro ao analisar documento");
-  }
 });
 
 app.listen(PORT, () => {
-  console.log("Servidor rodando na porta", PORT);
+    console.log("Servidor rodando na porta", PORT);
 });
 ```
 ***
@@ -706,7 +708,7 @@ az sql db list-editions --location brazilsouth --output table
 
 az group create --name rg-demo --location brazilsouth
 
-az sql server create --name meusqlserver123 --resource-group rg-demo --location brazilsouth --admin-user adminuser --admin-password "SenhaForte!123"
+az sql server create --name meusqlserver123 --resource-group rg-demo --location brazilsouth --admin-user adminuser --admin-password "SenhaForte$123"
 
 az sql server firewall-rule create --resource-group rg-demo --server meusqlserver123 --name AllowMyIP --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
 
