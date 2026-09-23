@@ -332,15 +332,8 @@ VISION_KEY=
 - Código exemplo
 ```javascript
 require("dotenv").config();
-
-const {
-    ImageAnalysisClient
-} = require("@azure-rest/ai-vision-image-analysis");
-
-const {
-    AzureKeyCredential
-} = require("@azure/core-auth");
-
+const Client = require("@azure-rest/ai-vision-image-analysis").default;
+const { AzureKeyCredential } = require('@azure/core-auth');
 
 // ========================================
 // Configuração
@@ -355,18 +348,12 @@ if (!endpoint || !key) {
     );
 }
 
-
 // ========================================
 // Instancia o cliente Azure Vision
 // ========================================
 
 const credential = new AzureKeyCredential(key);
-
-const client = new ImageAnalysisClient(
-    endpoint,
-    credential
-);
-
+const client = Client(endpoint, credential);
 
 // ========================================
 // Imagem que será analisada
@@ -381,7 +368,6 @@ const imageUrl =
 // ========================================
 
 const features = [
-    "Caption",
     "Read",
     "Tags",
     "Objects"
