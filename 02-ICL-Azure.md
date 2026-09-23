@@ -1445,11 +1445,13 @@ app.listen(port, () => {
 - Criar uma máquina virtual dentro do modelo **IaS* de um servidor *Windows* com *Internet Information Services* (IIS)
 - Verificar as regiões disponíveis para a conta e os tamanhos de VMs
 ```bash
-az account list-locations --query "[].name" -o tsv
+az policy assignment list
 
 az vm list-skus --location <regiao> --resource-type virtualMachines --output table
 
-az vm list-skus --location <regiao> --resource-type virtualMachines --size Standard_E2s_v3 --output json
+az vm list-skus --location <regiao> --resource-type virtualMachines --size Standard_E2s_v3 \
+--query "[].{Name:name, Restrictions:restrictions, CPUs:capabilities[?name=='vCPUs'].value | [0], MemoryGB:capabilities[?name=='MemoryGB'].value | [0]}" \
+--output table
 ```
 - Como serão criados vários recursos, é importante agrupá-los em um *resource group* (`iis_server`)
 ```bash
