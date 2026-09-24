@@ -729,7 +729,7 @@ tar -xvf sqlcmd-linux-amd64.tar.bz2
 ```
 - Efretuar a conexão com o banco de dados criado
 ```bash
-./sqlcmd -S meusqlserver123.database.windows.net -d db -U adminuser -P 'SenhaForte$123'
+./sqlcmd -S meusqlserver123.database.windows.net -d db -U adminuser -P SenhaForte$123
 ```
 - Código *SQL* para criar as tabelas utilizadas nos exemplos
 ```sql
