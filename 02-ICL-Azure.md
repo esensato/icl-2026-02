@@ -710,7 +710,7 @@ az group create --name rg-demo --location brazilsouth
 
 az sql server create --name meusqlserver123 --resource-group rg-demo --location brazilsouth --admin-user adminuser --admin-password SenhaForte$123
 
-az sql server firewall-rule create --resource-group rg-demo --server meusqlserver123 --name AllowMyIP --start-ip-address 0.0.0.0 --end-ip-address 0.0.0.0
+az sql server firewall-rule create --resource-group rg-demo --server meusqlserver123 --name AllowMyIP --start-ip-address 0.0.0.0 --end-ip-address 255.255.255.255
 
 az sql db create --resource-group rg-demo --server meusqlserver123 --name db --service-objective Basic
 
