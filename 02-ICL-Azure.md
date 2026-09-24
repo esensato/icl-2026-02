@@ -731,9 +731,21 @@ tar -xvf sqlcmd-linux-amd64.tar.bz2
 ```bash
 ./sqlcmd -S meusqlserver123.database.windows.net -d db -U adminuser -P SenhaForte$123
 ```
+```sql
+CREATE USER appuser WITH PASSWORD = 'SenhaForte$123';
+GO
+
+ALTER ROLE db_datareader ADD MEMBER appuser;
+GO
+
+ALTER ROLE db_datawriter ADD MEMBER appuser;
+GO
+
+```
+
 - Código *SQL* para criar as tabelas utilizadas nos exemplos
 ```sql
-CREATE TABLE [dbo].[Recibos] (
+CREATE TABLE RECIBOS (
     Id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     Cliente NVARCHAR(100) NULL,
     Total FLOAT NULL);
@@ -745,6 +757,7 @@ CREATE TABLE PEDIDOS_EXCLUIDOS (
     TOTAL INT NOT NULL,
     DATA_CRIACAO DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
+GO
 ```
 - Efetuando a conexão com o banco de dados criado
 ```bash
