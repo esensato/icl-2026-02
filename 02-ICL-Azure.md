@@ -784,8 +784,8 @@ async function conectar() {
     await sql.connect(config);
 
     const result = await sql.query("SELECT GETDATE() as data");
-    process.exit(0);
     console.log(result.recordset);
+    process.exit(0);
 
   } catch (err) {
     console.error("Erro:", err);
@@ -855,6 +855,8 @@ export AZURE_CORE_ONLY_SHOW_ERRORS=true
 export STORAGE_NAME=stf$(date +%s)
 export FUNCTION_APP_NAME=app-functions-$(date +%s)
 export RESOURCE_GROUP=az-functions
+
+az group create --name $RESOURCE_GROUP --location $LOCATION
 
 az storage account create --name $STORAGE_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --sku Standard_LRS
 
