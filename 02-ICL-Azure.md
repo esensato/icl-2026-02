@@ -10,7 +10,6 @@ az group create --name rg-demo --location brazilsouth
 az group delete --name rg-ai-aula --yes
 
 az provider register --namespace Microsoft.OperationalInsights
-az provider register --namespace Microsoft.sql
 ```
 ***
 ### Azure Text Translation
@@ -701,6 +700,7 @@ app.listen(PORT, () => {
 ### Acessando Banco SQL Server
 - Criar uma instância de banco de dados **SQL Server** usando o *CLI* (`az`)
 ```bash
+az provider register --namespace Microsoft.sql
 
 az account list-locations --output table
 
@@ -767,8 +767,8 @@ npm install --save mssql
 const sql = require("mssql");
 
 const config = {
-  user: "adminuser",
-  password: "SenhaForte!123",
+  user: "appuser",
+  password: "SenhaForte$123",
   server: "meusqlserver123.database.windows.net",
   database: "db",
   port: 1433,
@@ -784,11 +784,12 @@ async function conectar() {
     await sql.connect(config);
 
     const result = await sql.query("SELECT GETDATE() as data");
-
+    process.exit(0);
     console.log(result.recordset);
 
   } catch (err) {
     console.error("Erro:", err);
+    process.exit(1);
   }
 }
 
@@ -797,56 +798,152 @@ conectar();
 - Exemplo para inserir um registro
 ```javascript
 async function inserirRecibo() {
-  try {
-    await sql.connect(config);
+    try {
 
-    const request = new sql.Request();
+        await sql.connect(config);
 
-    request.input("Id", sql.Int, 1);
-    request.input("Cliente", sql.NVarChar(100), "João Silva");
-    request.input("Total", sql.Float, 150.75);
+        const request = new sql.Request();
 
-    await request.query(`
-      INSERT INTO dbo.Recibos (Id, Cliente, Total)
-      VALUES (@Id, @Cliente, @Total)
-    `);
+        request.input("Cliente", sql.NVarChar(100), "João Silva");
+        request.input("Total", sql.Float, 150.75);
 
-    console.log("Registro inserido com sucesso!");
+        await request.query(`INSERT INTO RECIBOS (Cliente, Total) VALUES (@Cliente, @Total)`);
 
-  } catch (err) {
-    console.error("Erro:", err);
-  } finally {
-    sql.close();
-  }
+        console.log("Registro inserido com sucesso!");
+        process.exit(0);
+
+    } catch (err) {
+        console.error("Erro:", err);
+    } finally {
+        sql.close();
+    }
+}
+```
+- Exemplo para consultar recibos
+```javascript
+async function listarRecibos() {
+    try {
+
+        await sql.connect(config);
+
+        const request = new sql.Request();
+        const resultado = await request.query(`SELECT * FROM RECIBOS`);
+        console.log(resultado.recordset);
+        process.exit(0);
+
+    } catch (err) {
+        console.error("Erro:", err);
+    } finally {
+        sql.close();
+    }
 }
 ```
 ***
 ### Azure Functions
-- Comandos do **Azure** *CLI* (`az`)
+- Verificar as regiões disponíveis para a conta por meio das políticas
 ```bash
-az functionapp list --output table
-az functionapp function list --name minha-func-app --resource-group rg-demo --output table
-az functionapp function show --name minha-func-app --resource-group rg-demo --function-name helloFunction
+az policy assignment list --query "[].parameters.listOfAllowedLocations.value[]" -o tsv
 ```
-- Criar uma aplicação do tipo **Azure Functions** via linha de comando
+- Criar uma variável de ambiente com a localização mais próxima obtida da lista acima
 ```bash
-$env:AZURE_CORE_ONLY_SHOW_ERRORS = "true"
-
-az group create --name rg-app-functions --location brazilsouth
-
-az storage account create --name appfunctionsstorage --resource-group rg-app-functions --location brazilsouth --sku Standard_LRS
-
-az functionapp create --resource-group rg-app-functions --consumption-plan-location brazilsouth --runtime node --functions-version 4 --name app-functions-$(Get-Date -Format 'yyyyMMddHHmmss') --storage-account appfunctionsstorage
+export LOCATION=
 ```
+- Criar uma aplicação do tipo **Azure Functions** via linha de comando 
+```bash
+export AZURE_CORE_ONLY_SHOW_ERRORS=true
+
+export STORAGE_NAME=stf$(date +%s)
+export FUNCTION_APP_NAME=app-functions-$(date +%s)
+export RESOURCE_GROUP=az-functions
+
+az storage account create --name $STORAGE_NAME --resource-group $RESOURCE_GROUP --location $LOCATION --sku Standard_LRS
+
+az functionapp create --resource-group $RESOURCE_GROUP --consumption-plan-location $LOCATION --runtime node --functions-version 4 --name $FUNCTION_APP_NAME --storage-account $STORAGE_NAME
+
+az functionapp show \
+  --resource-group $RESOURCE_GROUP \
+  --name $FUNCTION_APP_NAME \
+  --query "{Name:name,State:state,Host:defaultHostName}" \
+  --output table
+
+```
+
+- Criar uma função local para teste
+```bash
+mkdir hello-node
+cd hello-node
+
+cat > package.json <<'EOF'
+{
+  "name": "hello-node-function",
+  "version": "1.0.0",
+  "description": "Hello World Azure Function",
+  "main": "src/functions/hello.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0"
+  }
+}
+EOF
+
+mkdir -p src/functions
+
+cat > src/functions/hello.js <<'EOF'
+const { app } = require('@azure/functions');
+
+app.http('hello', {
+    methods: ['GET'],
+    authLevel: 'anonymous',
+    handler: async (request, context) => {
+        return {
+            status: 200,
+            jsonBody: {
+                message: 'Hello World from Azure Functions!',
+                runtime: 'Node.js'
+            }
+        };
+    }
+});
+EOF
+
+npm install
+
+zip -r function.zip . -x "node_modules/.cache/*"
+```
+- Publicar a função
+```bash
+az functionapp deployment source config-zip \
+  --resource-group $RESOURCE_GROUP \
+  --name $FUNCTION_APP_NAME \
+  --src function.zip
+```
+- Obter o endereço IP de acesso à função publicada
+```bash
+HOSTNAME=$(az functionapp show \
+  --resource-group $RESOURCE_GROUP \
+  --name $FUNCTION_APP_NAME \
+  --query defaultHostName \
+  --output tsv)
+
+echo $HOSTNAME
+
+curl "https://$HOSTNAME/api/hello"
+```
+#### Ambiente Local (VS Code)
+- Instalar a *extension* **Azure Functions** dentro do **VS Code**
 - Para efetuar testes locais
 ```bash
-npm install -g azure-functions-core-tools@4
+npm i -g azure-functions-core-tools@4
 npm install @azure/functions
-npm install @azure/functions-extensions-azure-sql
 
-func start
+func init az-functions --worker-runtime javascript
+
+cd az-functions
 ```
 #### HTTP Functions
+- Criar a implementação com o nome `index.js` no diretório `src/functions`
 ```javascript
 const { app } = require('@azure/functions');
 
@@ -869,10 +966,13 @@ app.http('httpFunctionTeste', {
 });
 ```
 - No exemplo acima, repara que podem ser passados dois parâmetros pela *URL* (`request.params.nome` e `request.query.get('msg')`)
+- Iniciar o ambiente de testes locais
 ```bash
-http://localhost:7071/api/mensagem/Joao?msg=ok
+func start
 ```
+- Verificar o resultado na URL `http://localhost:7071/api/mensagem/Joao?msg=ok`
 #### Timer Function
+- Funções que executam de tempos em tempos conforme programação
 ```javascript
 const { app } = require('@azure/functions');
 
@@ -933,7 +1033,7 @@ app.http('enviarMensagemFunction', {
 
         return {
             status: 200,
-            body: {
+            jsonBody: {
                 message: "Mensagem enviada com sucesso",
                 data: mensagem
             }
@@ -967,40 +1067,69 @@ app.storageQueue('processarFilaFunction', {
     }
 });
 ```
+- Para testar o envio da mensagem para a fila
+```bash
+curl -X POST \
+  http://localhost:7071/api/enviarMensagemFunction \
+  -H "Content-Type: application/json" \
+  -d '{"cliente":"Edson","total":1000.00}'
+```
 #### Storage
 - Listar todas as contas de armazenamento
 ```bash
-az storage account list --output table
-az storage account list --query "[].name" -o tsv
-az storage account show --name appfunctionsstorage --resource-group rg-app-functions
+az storage account list --query "[].{Name:name,Location:location,Kind:kind}" --output table
+az storage account show --name $STORAGE_NAME --resource-group $RESOURCE_GROUP
 ```
 - Obter a string de conexão
 ```bash
-az storage account show-connection-string --name appfunctionsstorage --resource-group rg-app-functions
+export AZURE_STORAGE_CONNECTION_STRING=$(
+  az storage account show-connection-string \
+    --name "$STORAGE_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --query connectionString \
+    --output tsv
+)
+
+echo $AZURE_STORAGE_CONNECTION_STRING
 ```
 - Criar um storage do tipo *queue*
 ```bash
-az storage queue create --name fila-teste --account-name appfunctionsstorage --connection-string <COLOCAR_AQUI_STRING_CONEXAO>
+az storage queue create --name fila-teste --account-name $STORAGE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ``` 
 #### Blob Function
 - Criar o *storage* para armazenar arquivos do tipo *blob* (imagens, por exemplo)
 ```bash
-az storage container create --name upload --account-name appfunctionsstorage --connection-string <COLOCAR_AQUI_STRING_CONEXAO>
+az storage container create --name upload --account-name $STORAGE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
 ```
 - Para tornar o repositório público
 ```bash
-az storage container set-permission --name upload --public-access blob --account-name appfunctionsstorage --connection-string <COLOCAR_AQUI_STRING_CONEXAO>
+az storage account update \
+  --name $STORAGE_NAME  \
+  --resource-group $RESOURCE_GROUP \
+  --allow-blob-public-access true
+
+az storage container set-permission \
+  --name upload \
+  --public-access blob \
+  --account-name $STORAGE_NAME \
+  --connection-string $AZURE_STORAGE_CONNECTION_STRING
+
+az storage account show \
+  --name $STORAGE_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --query allowBlobPublicAccess \
+  --output tsv
 ```
 - Código **Nodejs** cliente para efetuar o upload do arquivo
 - Criar o projeto
 ```bash
-mkdir upload-blob
-cd upload-blob
+mkdir az-upload-blob
+cd az-upload-blob
 npm init -y
 ```
 - Instalar as dependências
 ```bash
-npm install --save @azure/storage-blob express multer
+npm install --save @azure/storage-blob express multer env
 ```
 - Criar o arquivo para *upload* (no caso, o arquivo considerado se chama `arquivo.txt`)
 - Implementar o código para efetuar o *upload*
@@ -1009,7 +1138,7 @@ const { BlobServiceClient } = require('@azure/storage-blob');
 const fs = require('fs');
 
 const connectionString = "UseDevelopmentStorage=true";
-const containerName = "uploads";
+const containerName = "upload";
 const filePath = "./arquivo.txt";
 
 async function uploadBlob() {
@@ -1033,6 +1162,10 @@ async function uploadBlob() {
 uploadBlob();
 ```
 - O arquivo pode ser acessado por meio da URL `http://127.0.0.1:10000/devstoreaccount1/uploads/NOME_DO_ARQUIVO` (trocar o `NOME_DO_ARQUIVO`)
+- Para que o arquivo seja enviado para o *storage* na **Azure** basta informar a string de conexão da conta de armazenamento
+```javascript
+const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+```
 - Quando um arquivo é carregado (*upload*) então uma função do tipo `storageBlob` pode ser disparada
 ```javascript
 const { app } = require('@azure/functions');
@@ -1052,10 +1185,6 @@ app.storageBlob('processarArquivoFunction', {
         context.log("Conteúdo:", content);
     }
 });
-```
-- Para o ambiente de cloud, consultar o [Storage Account](https://portal.azure.com/#view/Microsoft_Azure_StorageHub/StorageHub.MenuView/~/StorageAccountsBrowse)
-```bash
-az storage account keys list --resource-group <resource-group> --account-name <storage-account>
 ```
 #### Exemplo de uma aplicação com *frontend* para o upload de imagem
 - Criar uma pasta `public` no projeto para conter os arquivos *HTML* e *CSS*
@@ -1402,112 +1531,76 @@ async function enviarPost() {
 
 enviarPost();
 ```
-### Deploy Aplicação
-- Efetuar login no [portal.azure.com](https://portal.azure.com/) *(pressionar control para abrir em nova página)*
-- Abrir um **Cloud Shell** na barra de ferramentas superior dentro do **Portal Azure**
-- Criar um grupo de recursos para incluir uma VM, recursos de rede, armazenamento, etc...
-- Buscando por uma VM em uma configuração mais básica chamada `Standard_B1s`
-```bash
-$env:AZURE_CORE_ONLY_SHOW_ERRORS = "true"
-az group create --name rg-app --location eastus
-
-az vm list-skus --location eastus -o table
-
-az vm create --resource-group rg-app --name vm-demo --image Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2:latest --admin-username azureuser --assign-identity --generate-ssh-keys --public-ip-sku Standard
-
-az vm create --resource-group rg-app --name vm-demo --image Ubuntu2204 --size Standard_DC1ds_v3 --admin-username azureuser --generate-ssh-keys
-```
-- Registrar *namespace* `Microsoft.OperationalInsights`
-```bash
-az provider register --namespace Microsoft.OperationalInsights
-```
-- Instalar o *plugin* **Azure Extensions** dentro do **VS Code**
-- Efetuar o *login* via **VS Code** no **Azure** utilizando o mesmo usuário da faculdade (o mesmo que obteve os créditos)
-- Criar um **App Service**
-- Criar uma aplicação **Nodejs** de teste
-```javascript
-const express = require("express");
-
-const app = express();
-
-// IMPORTANTE: Azure define a porta dinamicamente
-const port = process.env.PORT || 3000;
-
-// Middleware para JSON
-app.use(express.json());
-
-// Rota principal
-app.get("/", (req, res) => {
-    res.send("<h1>🚀 App rodando no Azure com Express!</h1>");
-});
-
-// Rota de teste API
-app.get("/api/hello", (req, res) => {
-    res.json({
-        message: "Hello World API",
-        status: "ok"
-    });
-});
-
-// Rota POST (exemplo)
-app.post("/api/data", (req, res) => {
-    res.json({
-        received: req.body
-    });
-});
-
-// Subir servidor
-app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
-});
-```
-- Efetuar o *deploy* da aplicação na **Azure**
-
 ### Virtualização
 - Criar uma máquina virtual dentro do modelo **IaS* de um servidor *Windows* com *Internet Information Services* (IIS)
-- Verificar as regiões disponíveis para a conta e os tamanhos de VMs
+- Verificar as localizações disponíveis para a conta por meio das políticas
 ```bash
-az policy assignment list
+```bash
+az policy assignment list --query "[].parameters.listOfAllowedLocations.value[]" -o tsv
+```
+- Escolher uma localização e definir em uma variável de ambiente
+```bash
+export LOCATION=
+```
+- Objetivo: encontrar qual a região disponível oferece uma VM com tamanho mínimo `Standard_E2s_v4`
+- Pesquisar as máquinas virtuais e seus recursos dentro de uma região
+```bash
+az vm list-skus \
+  --resource-type virtualMachines \
+  --query "[?capabilities[?name=='vCPUs' && value=='1'] || capabilities[?name=='vCPUs' && value=='2']].{SKU:name,Family:family,vCPUs:capabilities[?name=='vCPUs'].value | [0],MemoryGB:capabilities[?name=='MemoryGB'].value | [0],Restrictions:restrictions}" \
+  --output table \
+  --location $LOCATION
+```
+- Verificar se existem *quotas* disponíveis para a máquina virtual selecionada anteriormente 
+```bash
+az vm list-usage \
+  --query "[?to_number(limit) > \`0\`].{Quota:name.localizedValue,Current:currentValue,Limit:limit}" \
+  --output table \
+  --location $LOCATION
 
-az vm list-skus --location <regiao> --resource-type virtualMachines --output table
-
-az vm list-skus --location <regiao> --resource-type virtualMachines --size Standard_E2s_v3 \
---query "[].{Name:name, Restrictions:restrictions, CPUs:capabilities[?name=='vCPUs'].value | [0], MemoryGB:capabilities[?name=='MemoryGB'].value | [0]}" \
---output table
+az vm list-usage \
+  --query "[?contains(name.value, 'EC2')].{Quota:name.localizedValue,Current:currentValue,Limit:limit}" \
+  --output table \
+  --location $LOCATION
 ```
 - Como serão criados vários recursos, é importante agrupá-los em um *resource group* (`iis_server`)
 ```bash
-az group create --name iis_server --location brazilsouth
+export RESOURCE_GROUP=iis_server
+az group create --name $RESOURCE_GROUP --location $LOCATION
+
 ```
 - Criar uma rede virtual
 ```bash
+export VNET_NAME=vm-iis-net
+export SUB_NET_NAME=vm-iis-subnet
+
 az network vnet create \
-  --resource-group iis_server \
-  --name vm-iis \
+  --resource-group $RESOURCE_GROUP \
+  --name $VNET_NAME \
   --address-prefix 10.0.0.0/16 \
-  --subnet-name vm-iis-subnet \
+  --subnet-name $SUB_NET_NAME \
   --subnet-prefix 10.0.1.0/24
 
 az network vnet show \
-  --resource-group iis_server \
-  --name vm-iis \
+  --resource-group $RESOURCE_GROUP \
+  --name $VNET_NAME \
   --output table
-
 ```
 - Detalhe sobre o CIDR: o que significa /16 e /24
 - /16 = 11111111.11111111.00000000.00000000 = 255.255.0.0
 - /24 = 11111111.11111111.11111111.00000000 = 255.255.255.0
 - Criar o *security group*
 ```bash
+export NSG_NAME=nsg-iis
 az network nsg create \
-  --resource-group iis_server \
-  --name nsg-iis
+  --resource-group $RESOURCE_GROUP \
+  --name $NSG_NAME
 ```
 - Liberar **HTTP*
 ```bash
 az network nsg rule create \
-  --resource-group iis_server \
-  --nsg-name nsg-iis \
+  --resource-group $RESOURCE_GROUP \
+  --nsg-name $NSG_NAME \
   --name Allow-HTTP \
   --priority 1000 \
   --direction Inbound \
@@ -1518,8 +1611,8 @@ az network nsg rule create \
 - Liberar o **Remote Desktop**
 ```bash
 az network nsg rule create \
-  --resource-group iis_server \
-  --nsg-name nsg-iis \
+  --resource-group $RESOURCE_GROUP \
+  --nsg-name $NSG_NAME \
   --name Allow-RDP \
   --priority 1100 \
   --direction Inbound \
@@ -1530,32 +1623,36 @@ az network nsg rule create \
 - Mostrar as regras atualizadas
 ```bash
 az network nsg rule list \
-  --resource-group iis_server \
-  --nsg-name nsg-iis \
+  --resource-group $RESOURCE_GROUP \
+  --nsg-name $NSG_NAME \
   --output table
 ```
 - Criar o IP público
 ```bash
+export PIP_NAME=pip-iis
+
 az network public-ip create \
-  --resource-group iis_server \
-  --name pip-iis \
+  --resource-group $RESOURCE_GROUP \
+  --name $PIP_NAME \
   --sku Standard \
   --allocation-method Static
 
 az network public-ip show \
-  --resource-group iis_server \
-  --name pip-iis \
+  --resource-group $RESOURCE_GROUP \
+  --name $PIP_NAME \
   --query ipAddress \
   --output tsv
 ```
 - Criar a VM (será solicitado uma senha para a VM - utilizar VMT&ste!1234)
 ```bash
+
+export VM1_NAME=iis-vm-1
+
 az vm create \
-  --resource-group iis_server \
-  --name iis-vm-1 \
-  --location brazilsouth \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM1_NAME \
   --zone 1 \
-  --size Standard_E2s_v3 \
+  --size Standard_D2as_v4 \
   --image MicrosoftWindowsServer:WindowsServer:2025-datacenter-g2:latest \
   --admin-username azureuser \
   --security-type TrustedLaunch \
@@ -1563,17 +1660,19 @@ az vm create \
   --enable-vtpm true \
   --storage-sku Premium_LRS \
   --os-disk-size-gb 127 \
-  --vnet-name vm-iis \
-  --subnet vm-iis-subnet \
-  --public-ip-address pip-iis \
+  --vnet-name $VNET_NAME \
+  --subnet $SUB_NET_NAME \
+  --public-ip-address $PIP_NAME \
+  --nsg $NSG_NAME \
   --nic-delete-option delete \
-  --os-disk-delete-option delete
+  --os-disk-delete-option delete \
+  --location $LOCATION
 ```
 - Instalar o IIS
 ```bash
 az vm extension set \
-  --resource-group iis_server \
-  --vm-name iis-vm-1 \
+  --resource-group $RESOURCE_GROUP \
+  --vm-name $VM1_NAME \
   --name CustomScriptExtension \
   --publisher Microsoft.Compute \
   --version 1.10 \
@@ -1583,7 +1682,6 @@ az vm extension list \
   --resource-group $RESOURCE_GROUP \
   --vm-name $VM_NAME \
   --output table
-
 ```
 - Criar uma página html
 ```bash
