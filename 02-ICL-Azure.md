@@ -938,7 +938,6 @@ curl "https://$HOSTNAME/api/hello"
 - Para efetuar testes locais
 ```bash
 npm i -g azure-functions-core-tools@4
-npm install @azure/functions
 
 func init az-functions --worker-runtime javascript
 
