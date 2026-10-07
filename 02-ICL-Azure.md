@@ -1321,6 +1321,11 @@ app.listen(3000, () => {
 });
 ```
 - Adaptar o código acima para realizar o upload na **Azure**
+
+
+
+
+
 ### Armazenamento Configurações Locais e na Cloud
 - Configurações podem ser armazenadas **localmente** no arquivo `local.settings.json`
 ```json
@@ -1346,6 +1351,20 @@ az functionapp config appsettings set --name minha-function --resource-group rg-
 ```bash
 az keyvault create --name meu-keyvault --resource-group rg-app-functions --location brazilsouth
 az keyvault secret set --vault-name meu-keyvault --name DB_PASSWORD --value 123456
+
+az functionapp identity assign \
+  --name minha-function \
+  --resource-group rg-app-functions
+
+az role assignment create \
+  --assignee <PRINCIPAL_ID_DA_FUNCTION> \
+  --role "Key Vault Secrets User" \
+  --scope "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/rg-app-functions/providers/Microsoft.KeyVault/vaults/meu-keyvault"
+
+az functionapp config appsettings set \
+  --name minha-function \
+  --resource-group rg-app-functions \
+  --settings "DB_PASSWORD=@Microsoft.KeyVault(SecretUri=https://meu-keyvault.vault.azure.net/secrets/DB_PASSWORD)"
 ```
 - Para acessar via código dentro das funções
 ```javascript
@@ -1392,6 +1411,17 @@ app.http('listarRecibosFunction', {
 });
 ```
 - Editar o arquivo `local.settings.json` e incluir a configuração para acesso ao banco de dados `SqlConnectionString` dentro de `Values`
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "SqlConnectionString": "Server=tcp:meusqlserver123.database.windows.net,1433;Initial Catalog=db;User ID=adminuser;Password=senha-local;Encrypt=True;"
+  }
+}
+```
+
 - Exemplo com passagem de parâmetros
 ```javascript
 const { app, input } = require('@azure/functions');
