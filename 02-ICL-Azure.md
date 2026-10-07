@@ -1695,7 +1695,24 @@ az vm extension set \
   --settings '{"commandToExecute":"powershell -ExecutionPolicy Bypass -Command \"Set-Content -Path C:\\inetpub\\wwwroot\\index.html -Value ''<html><head><title>Azure IaaS Lab</title></head><body><h1>Servidor IIS no Azure</h1><p>Esta página está sendo servida por uma VM Windows Server.</p><p>Laboratório de IaaS.</p></body></html>''\""}'
 ```
 ### Balanceamento de Carga
-- Criar um *load balancer*
+- Criar um novo IP para atender ao *load balancer*
+```bash
+export LB_NAME=lb-web
+export LB_PIP_NAME=pip-lb
+
+az network public-ip create \
+  --resource-group $RESOURCE_GROUP \
+  --name $LB_PIP_NAME \
+  --sku Standard \
+  --allocation-method Static
+
+az network public-ip show \
+  --resource-group $RESOURCE_GROUP \
+  --name $LB_PIP_NAME \
+  --query ipAddress \
+  --output tsv
+```
+- Criar o *load balancer*
 ```bash
 az network lb create \
   --resource-group iis_server \
@@ -1705,23 +1722,327 @@ az network lb create \
   --frontend-ip-name frontend \
   --backend-pool-name backend
 ```
-- Criar um novo IP para atender ao *load balancer*
+- Descobrir as interfaces de rede das VMs
 ```bash
-az network public-ip create \
-  --resource-group iis_server \
-  --name pip-lb \
-  --sku Standard \
-  --allocation-method Static
+az vm show \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM1_NAME \
+  --show-details \
+  --query networkProfile.networkInterfaces[0].id \
+  --output tsv
+
+az vm show \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM2_NAME \
+  --show-details \
+  --query networkProfile.networkInterfaces[0].id \
+  --output tsv
+
+export NIC1_ID=$(az vm show \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM1_NAME \
+  --query networkProfile.networkInterfaces[0].id \
+  --output tsv)
+
+export NIC2_ID=$(az vm show \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM2_NAME \
+  --query networkProfile.networkInterfaces[0].id \
+  --output tsv)
+
+export NIC1_NAME=$(basename $NIC1_ID)
+export NIC2_NAME=$(basename $NIC2_ID)
 ```
 - Definir um *pool* onde as duas VMs serão associadas
 ```bash
 az network nic ip-config address-pool add \
   --address-pool backend \
   --ip-config-name ipconfig1 \
-  --nic-name NIC_DA_VM1 \
-  --resource-group iis_server \
-  --lb-name lb-web
+  --nic-name $NIC1_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME
+
+az network nic ip-config address-pool add \
+  --address-pool backend \
+  --ip-config-name ipconfig1 \
+  --nic-name $NIC2_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME
 ```
+- Criar um *health probe*
+```bash
+az network lb probe create \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME \
+  --name http-probe \
+  --protocol Http \
+  --port 80 \
+  --path
+```
+- Definir a regra de balanceamento
+```bash
+az network lb rule create \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME \
+  --name http-rule \
+  --protocol Tcp \
+  --frontend-port 80 \
+  --backend-port 80 \
+  --frontend-ip-name frontend \
+  --backend-pool-name backend \
+  --probe-name http-probe
+```
+- Verificar todas as configurações
+```bash
+az network lb show \
+  --resource-group $RESOURCE_GROUP \
+  --name $LB_NAME \
+  --output table
+
+az network lb address-pool show \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME \
+  --name backend \
+  --output json
+
+az network lb probe list \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME \
+  --output table
+
+az network lb rule list \
+  --resource-group $RESOURCE_GROUP \
+  --lb-name $LB_NAME \
+  --output table
+```
+- Obter o IP público do *load balancer*
+```bash
+export LB_IP=$(az network public-ip show \
+  --resource-group $RESOURCE_GROUP \
+  --name $LB_PIP_NAME \
+  --query ipAddress \
+  --output tsv)
+
+echo $LB_IP
+```
+- Testar o balanceamento
+```bash
+for i in {1..10}; do
+  curl -s http://$LB_IP | grep "<h1>"
+done
+```
+- Testar a alta disponibilidade
+```bash
+az vm stop \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM1_NAME
+
+curl http://$LB_IP
+
+az vm start \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM1_NAME
+```
+### Azure Kubernetes Service (AKS)
+- Verificar as aplicações básicas
+```bash
+docker --version
+node --version
+kubectl version --client
+```
+- Criar as variáveis de ambiente utilizadas
+```bash
+export RESOURCE_GROUP=rg-aula-aks
+export LOCATION=eastus
+export AKS_NAME=aks-aula
+export ACR_NAME=acraulaaks$RANDOM
+```
+- Criar o grupo de recursos
+```bash
+az group create \
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
+```
+- Criar o **Azure Container Registry (ACR)**
+```bash
+az acr create \
+  --resource-group $RESOURCE_GROUP \
+  --name $ACR_NAME \
+  --sku Basic
+
+az acr show \
+  --resource-group $RESOURCE_GROUP \
+  --name $ACR_NAME \
+  --output table
+```
+- Obter o endereço do **ACR**
+```bash
+az acr show \
+  --resource-group $RESOURCE_GROUP \
+  --name $ACR_NAME \
+  --query loginServer \
+  --output tsv
+```
+- Criar o *cluster*
+```bash
+az aks create \
+  --resource-group $RESOURCE_GROUP \
+  --name $AKS_NAME \
+  --node-count 1 \
+  --generate-ssh-keys
+```
+- Conectando ao *cluster*
+```bash
+az aks get-credentials \
+  --resource-group $RESOURCE_GROUP \
+  --name $AKS_NAME
+```
+- Cria uma aplicação simples em **Nodejs**
+```bash
+mkdir hello-kubernetes
+cd hello-kubernetes
+npm init -y
+npm install express
+cat >>index.js <EOF
+const express = require("express");
+
+const app = express();
+
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("Hello World from Node.js on Kubernetes!");
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+EOF
+```
+- Criar o *Dockerfile*
+```yaml
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+COPY server.js ./
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]
+```
+- Criar a imagem **Docker**
+```bash
+ACR_LOGIN_SERVER=$(az acr show \
+  --resource-group $RESOURCE_GROUP \
+  --name $ACR_NAME \
+  --query loginServer \
+  --output tsv)
+
+echo $ACR_LOGIN_SERVER
+
+docker build \
+  -t $ACR_LOGIN_SERVER/hello-node:v1 .
+
+docker images
+```
+- Publicar a imagem no **ACR**
+```bash
+az acr login --name $ACR_NAME
+
+docker push $ACR_LOGIN_SERVER/hello-node:v1
+
+az acr repository list \
+  --name $ACR_NAME \
+  --output table
+
+az acr repository show-tags \
+  --name $ACR_NAME \
+  --repository hello-node \
+  --output table
+```
+- Conceder a permissão ao *cluster* para acessar o **ACR**
+```bash
+az aks update \
+  --resource-group $RESOURCE_GROUP \
+  --name $AKS_NAME \
+  --attach-acr $ACR_NAME
+```
+- Criar o `deployment.yaml`
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: hello-node
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: hello-node
+
+  template:
+    metadata:
+      labels:
+        app: hello-node
+
+    spec:
+      containers:
+        - name: hello-node
+          image: ACR_LOGIN_SERVER/hello-node:v1
+          ports:
+            - containerPort: 3000
+```
+- Aplicar o *deployment*
+```bash
+kubectl apply -f deployment.yaml
+
+kubectl get deployments
+
+kubectl get pods
+```
+- Criar o `service.yaml`
+```bash
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: hello-node
+
+spec:
+  type: LoadBalancer
+
+  selector:
+    app: hello-node
+
+  ports:
+    - port: 80
+      targetPort: 3000
+```
+- Aplicar o *service*
+```bash
+kubectl apply -f service.yaml
+
+kubectl get service
+```
+- Obter o endereço de acesso à aplicação
+```bash
+kubectl get service hello-node -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```
+
+
+
+
+
+
+
+
 
 
 
