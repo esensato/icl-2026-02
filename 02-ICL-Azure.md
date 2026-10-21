@@ -1563,9 +1563,8 @@ async function enviarPost() {
 enviarPost();
 ```
 ### Virtualização
-- Criar uma máquina virtual dentro do modelo **IaS* de um servidor *Windows* com *Internet Information Services* (IIS)
+- Criar uma máquina virtual dentro do modelo **IaS** de um servidor *Windows* com *Internet Information Services* (IIS)
 - Verificar as localizações disponíveis para a conta por meio das políticas
-```bash
 ```bash
 az policy assignment list --query "[].parameters.listOfAllowedLocations.value[]" -o tsv
 ```
